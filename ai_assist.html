@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>鋼印 AI 輔助判斷</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 0; padding: 15px; background: #f9f9f9; text-align: center; }
+        .step-container { display: none; margin-top: 20px; }
+        .active-step { display: block; }
+        .img-container { width: 100%; max-height: 50vh; margin-top: 15px; background: #ddd; }
+        img { max-width: 100%; }
+        button { padding: 10px 20px; margin-top: 15px; font-size: 16px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
+        input[type="file"] { margin-top: 10px; }
+        .preview-box { width: 150px; height: 150px; border: 1px solid #ccc; margin: 10px auto; object-fit: contain; background: white; }
+        #result-box { margin-top: 20px; padding: 15px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: left; }
+        .stars { color: gold; font-size: 24px; }
+        #loading { display: none; color: #007bff; font-weight: bold; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <h2>鋼印 AI 輔助判斷</h2>
+
+    <div id="step1" class="step-container active-step">
+        <h3>步驟 1：上傳拓印圖檔 (JPG/PDF)</h3>
+        <input type="file" id="file1" accept="image/jpeg, image/png, application/pdf">
+        <div class="img-container">
+            <img id="image1" src="">
+        </div>
+        <button id="cropBtn1" style="display:none;">確認擷取拓印範圍</button>
+    </div>
+
+    <div id="step2" class="step-container">
+        <h3>步驟 2：拍攝或上傳實際鋼印</h3>
+        <input type="file" id="file2" accept="image/*" capture="environment">
+        <div class="img-container">
+            <img id="image2" src="">
+        </div>
+        <button id="cropBtn2" style="display:none;">確認擷取拍攝範圍</button>
+    </div>
+
+    <div id="step3" class="step-container">
+        <h3>步驟 3：確認比對圖片</h3>
+        <div style="display: flex; justify-content: space-around;">
+            <div>
+                <p>拓印圖</p>
+                <img id="preview1" class="preview-box">
+            </div>
+            <div>
+                <p>實際圖</p>
+                <img id="preview2" class="preview-box">
+            </div>
+        </div>
+        <button id="submitBtn">送出 AI 比對</button>
+        <div id="loading">AI 正在努力比對中，請稍候...</div>
+        
+        <div id="result-box" style="display:none;">
+            <h4>比對結果：</h4>
+            <div id="star-rating" class="stars"></div>
+            <p id="explanation-text"></p>
+        </div>
+        <button id="resetBtn" style="display:none;" onclick="location.reload()">重新比對</button>
+    </div>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        
+        // 請將此處替換為你部署的 GAS Web App URL
+        const GAS_API_URL = "你的_GAS_WEB_APP_URL"; 
+
+        let cropper1, cropper2;
+        let finalImg1Data, finalImg2Data;
+
+        // 共用的檔案讀取與 PDF 轉圖邏輯
+        async function handleFileSelect(file, imageElement, cropperInstance, btnElement) {
+            if (!file) return;
+            if (file.type === 'application/pdf') {
+                const fileReader = new FileReader();
+                fileReader.onload = async function() {
+                    const typedarray = new Uint8Array(this.result);
+                    const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                    const page = await pdf.getPage(1);
+                    const viewport = page.getViewport({ scale: 2.0 });
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+                    initCropper(canvas.toDataURL('image/jpeg'), imageElement, cropperInstance, btnElement);
+                };
+                fileReader.readAsArrayBuffer(file);
+            } else {
+                const reader = new FileReader();
+                reader.onload = (e) => initCropper(e.target.result, imageElement, cropperInstance, btnElement);
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // 初始化裁切器 (手動拉方塊格)
+        function initCropper(src, imageElement, cropperInstance, btnElement) {
+            imageElement.src = src;
+            if (cropperInstance) cropperInstance.destroy();
+            cropperInstance = new Cropper(imageElement, {
+                viewMode: 1, // 限制裁切框不能超出圖片
+                dragMode: 'move',
+                autoCropArea: 0.8,
+                restore: false,
+            });
+            btnElement.style.display = 'inline-block';
+            return cropperInstance; // 回傳實例以便更新外部變數
+        }
+
+        // Step 1 處理
+        document.getElementById('file1').addEventListener('change', function(e) {
+            handleFileSelect(e.target.files[0], document.getElementById('image1'), cropper1, document.getElementById('cropBtn1'))
+            .then(() => cropper1 = new Cropper(document.getElementById('image1'), { viewMode: 1 }));
+        });
+
+        document.getElementById('cropBtn1').addEventListener('click', () => {
+            finalImg1Data = document.getElementById('image1').cropper.getCroppedCanvas().toDataURL('image/jpeg');
+            document.getElementById('preview1').src = finalImg1Data;
+            document.getElementById('step1').classList.remove('active-step');
+            document.getElementById('step2').classList.add('active-step');
+        });
+
+        // Step 2 處理
+        document.getElementById('file2').addEventListener('change', function(e) {
+            handleFileSelect(e.target.files[0], document.getElementById('image2'), cropper2, document.getElementById('cropBtn2'))
+            .then(() => cropper2 = new Cropper(document.getElementById('image2'), { viewMode: 1 }));
+        });
+
+        document.getElementById('cropBtn2').addEventListener('click', () => {
+            finalImg2Data = document.getElementById('image2').cropper.getCroppedCanvas().toDataURL('image/jpeg');
+            document.getElementById('preview2').src = finalImg2Data;
+            document.getElementById('step2').classList.remove('active-step');
+            document.getElementById('step3').classList.add('active-step');
+        });
+
+        // Step 3 發送 API
+        document.getElementById('submitBtn').addEventListener('click', async () => {
+            if (!GAS_API_URL.startsWith("http")) {
+                alert("請先在程式碼中填入 GAS_API_URL");
+                return;
+            }
+            
+            document.getElementById('submitBtn').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+
+            try {
+                const response = await fetch(GAS_API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ img1: finalImg1Data, img2: finalImg2Data }),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' } // GAS 限制，需用 text/plain 發送 JSON
+                });
+                
+                const result = await response.json();
+                
+                // 渲染結果
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('result-box').style.display = 'block';
+                document.getElementById('resetBtn').style.display = 'inline-block';
+                
+                document.getElementById('star-rating').innerText = '★'.repeat(result.star) + '☆'.repeat(5 - result.star);
+                document.getElementById('explanation-text').innerText = result.explanation;
+
+            } catch (error) {
+                alert("比對發生錯誤：" + error);
+                document.getElementById('submitBtn').style.display = 'inline-block';
+                document.getElementById('loading').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
