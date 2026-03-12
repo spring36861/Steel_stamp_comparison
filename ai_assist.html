@@ -11,14 +11,20 @@
         body { font-family: sans-serif; margin: 0; padding: 15px; background: #f9f9f9; text-align: center; }
         .step-container { display: none; margin-top: 20px; }
         .active-step { display: block; }
-        .img-container { width: 100%; max-height: 50vh; margin-top: 15px; background: #ddd; }
-        img { max-width: 100%; }
-        button { padding: 10px 20px; margin-top: 15px; font-size: 16px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
-        input[type="file"] { margin-top: 10px; }
+        
+        /* 確保裁切容器正確顯示 */
+        .img-container { width: 100%; height: 50vh; margin-top: 15px; background: #ddd; overflow: hidden; }
+        /* Cropper 必須要將 img 設定為 block 與 max-width */
+        .img-container img { display: block; max-width: 100%; } 
+        
+        button { padding: 10px 20px; margin-top: 15px; font-size: 16px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        button:active { background: #0056b3; }
+        input[type="file"] { margin-top: 10px; font-size: 16px; }
+        
         .preview-box { width: 150px; height: 150px; border: 1px solid #ccc; margin: 10px auto; object-fit: contain; background: white; }
         #result-box { margin-top: 20px; padding: 15px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: left; }
-        .stars { color: gold; font-size: 24px; }
-        #loading { display: none; color: #007bff; font-weight: bold; margin-top: 20px; }
+        .stars { color: #f39c12; font-size: 28px; font-weight: bold; margin: 10px 0; }
+        #loading { display: none; color: #007bff; font-weight: bold; margin-top: 20px; font-size: 18px; }
     </style>
 </head>
 <body>
@@ -47,11 +53,11 @@
         <h3>步驟 3：確認比對圖片</h3>
         <div style="display: flex; justify-content: space-around;">
             <div>
-                <p>拓印圖</p>
+                <p>拓印範圍</p>
                 <img id="preview1" class="preview-box">
             </div>
             <div>
-                <p>實際圖</p>
+                <p>拍攝範圍</p>
                 <img id="preview2" class="preview-box">
             </div>
         </div>
@@ -69,81 +75,100 @@
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
         
-        // 請將此處替換為你部署的 GAS Web App URL
+        // ★★★ 請將此處替換為你部署的 GAS Web App URL ★★★
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwOz3wneM3TYvaA7UAdw0_AP-kiSTU6nJSYJn2LcrdL5F3mXYZIybb0JiqWKB9Jc4qwnA/exec"; 
 
-        let cropper1, cropper2;
-        let finalImg1Data, finalImg2Data;
+        let cropper1 = null;
+        let cropper2 = null;
+        let finalImg1Data = null;
+        let finalImg2Data = null;
 
-        // 共用的檔案讀取與 PDF 轉圖邏輯
-        async function handleFileSelect(file, imageElement, cropperInstance, btnElement) {
+        // 共用處理檔案與初始化裁切框的邏輯
+        function processFileAndCrop(file, imgElement, btnElement, stepNum) {
             if (!file) return;
+
+            // 定義啟動 Cropper 的函式
+            const startCropper = (imageSrc) => {
+                // 等待圖片真正載入完畢後，再啟動裁切框
+                imgElement.onload = () => {
+                    if (stepNum === 1) {
+                        if (cropper1) cropper1.destroy(); // 避免重複初始化
+                        cropper1 = new Cropper(imgElement, { viewMode: 1, autoCropArea: 0.8 });
+                    } else if (stepNum === 2) {
+                        if (cropper2) cropper2.destroy();
+                        cropper2 = new Cropper(imgElement, { viewMode: 1, autoCropArea: 0.8 });
+                    }
+                    btnElement.style.display = 'inline-block';
+                };
+                imgElement.src = imageSrc; // 觸發 onload 事件
+            };
+
+            // 判斷是否為 PDF
             if (file.type === 'application/pdf') {
                 const fileReader = new FileReader();
                 fileReader.onload = async function() {
-                    const typedarray = new Uint8Array(this.result);
-                    const pdf = await pdfjsLib.getDocument(typedarray).promise;
-                    const page = await pdf.getPage(1);
-                    const viewport = page.getViewport({ scale: 2.0 });
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-                    await page.render({ canvasContext: context, viewport: viewport }).promise;
-                    initCropper(canvas.toDataURL('image/jpeg'), imageElement, cropperInstance, btnElement);
+                    try {
+                        const typedarray = new Uint8Array(this.result);
+                        const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                        const page = await pdf.getPage(1);
+                        const viewport = page.getViewport({ scale: 2.0 });
+                        const canvas = document.createElement('canvas');
+                        const context = canvas.getContext('2d');
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+                        await page.render({ canvasContext: context, viewport: viewport }).promise;
+                        
+                        // 將 Canvas 轉成圖片傳給 Cropper
+                        startCropper(canvas.toDataURL('image/jpeg'));
+                    } catch (error) {
+                        alert("PDF 讀取失敗，請確認檔案。");
+                    }
                 };
                 fileReader.readAsArrayBuffer(file);
             } else {
+                // 處理一般圖片
                 const reader = new FileReader();
-                reader.onload = (e) => initCropper(e.target.result, imageElement, cropperInstance, btnElement);
+                reader.onload = (e) => startCropper(e.target.result);
                 reader.readAsDataURL(file);
             }
         }
 
-        // 初始化裁切器 (手動拉方塊格)
-        function initCropper(src, imageElement, cropperInstance, btnElement) {
-            imageElement.src = src;
-            if (cropperInstance) cropperInstance.destroy();
-            cropperInstance = new Cropper(imageElement, {
-                viewMode: 1, // 限制裁切框不能超出圖片
-                dragMode: 'move',
-                autoCropArea: 0.8,
-                restore: false,
-            });
-            btnElement.style.display = 'inline-block';
-            return cropperInstance; // 回傳實例以便更新外部變數
-        }
-
-        // Step 1 處理
+        // --- Step 1 事件監聽 ---
         document.getElementById('file1').addEventListener('change', function(e) {
-            handleFileSelect(e.target.files[0], document.getElementById('image1'), cropper1, document.getElementById('cropBtn1'))
-            .then(() => cropper1 = new Cropper(document.getElementById('image1'), { viewMode: 1 }));
+            processFileAndCrop(e.target.files[0], document.getElementById('image1'), document.getElementById('cropBtn1'), 1);
         });
 
         document.getElementById('cropBtn1').addEventListener('click', () => {
-            finalImg1Data = document.getElementById('image1').cropper.getCroppedCanvas().toDataURL('image/jpeg');
+            if (!cropper1) return;
+            // 取得裁切後的圖片 Base64
+            finalImg1Data = cropper1.getCroppedCanvas().toDataURL('image/jpeg');
             document.getElementById('preview1').src = finalImg1Data;
+            
+            // 切換至步驟 2
             document.getElementById('step1').classList.remove('active-step');
             document.getElementById('step2').classList.add('active-step');
         });
 
-        // Step 2 處理
+        // --- Step 2 事件監聽 ---
         document.getElementById('file2').addEventListener('change', function(e) {
-            handleFileSelect(e.target.files[0], document.getElementById('image2'), cropper2, document.getElementById('cropBtn2'))
-            .then(() => cropper2 = new Cropper(document.getElementById('image2'), { viewMode: 1 }));
+            processFileAndCrop(e.target.files[0], document.getElementById('image2'), document.getElementById('cropBtn2'), 2);
         });
 
         document.getElementById('cropBtn2').addEventListener('click', () => {
-            finalImg2Data = document.getElementById('image2').cropper.getCroppedCanvas().toDataURL('image/jpeg');
+            if (!cropper2) return;
+            // 取得裁切後的圖片 Base64
+            finalImg2Data = cropper2.getCroppedCanvas().toDataURL('image/jpeg');
             document.getElementById('preview2').src = finalImg2Data;
+            
+            // 切換至步驟 3
             document.getElementById('step2').classList.remove('active-step');
             document.getElementById('step3').classList.add('active-step');
         });
 
-        // Step 3 發送 API
+        // --- Step 3 送出 API ---
         document.getElementById('submitBtn').addEventListener('click', async () => {
             if (!GAS_API_URL.startsWith("http")) {
-                alert("請先在程式碼中填入 GAS_API_URL");
+                alert("開發者提示：請先在原始碼中填入正確的 GAS_API_URL");
                 return;
             }
             
@@ -154,7 +179,7 @@
                 const response = await fetch(GAS_API_URL, {
                     method: 'POST',
                     body: JSON.stringify({ img1: finalImg1Data, img2: finalImg2Data }),
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' } // GAS 限制，需用 text/plain 發送 JSON
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
                 });
                 
                 const result = await response.json();
