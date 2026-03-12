@@ -9,67 +9,102 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <style>
         body { font-family: sans-serif; margin: 0; padding: 15px; background: #f9f9f9; text-align: center; }
-        .step-container { display: none; margin-top: 20px; }
-        .active-step { display: block; }
         
-        /* 確保裁切容器正確顯示 */
-        .img-container { width: 100%; height: 50vh; margin-top: 15px; background: #ddd; overflow: hidden; }
-        /* Cropper 必須要將 img 設定為 block 與 max-width */
+        /* --- 進度條 (Progress Bar) 樣式 --- */
+        .progress-container { width: 100%; max-width: 400px; margin: 20px auto 30px auto; }
+        .progressbar { counter-reset: step; padding: 0; display: flex; justify-content: space-between; list-style: none; position: relative; margin: 0; }
+        .progressbar li { list-style-type: none; width: 33.33%; position: relative; text-align: center; font-weight: bold; color: #aaa; font-size: 14px; z-index: 1; }
+        .progressbar li:before { 
+            content: counter(step); counter-increment: step; 
+            width: 30px; height: 30px; line-height: 28px; border: 2px solid #aaa; 
+            display: block; text-align: center; margin: 0 auto 10px auto; 
+            border-radius: 50%; background-color: #f9f9f9; transition: all 0.3s;
+        }
+        /* 連接線 */
+        .progressbar li:after { 
+            content: ''; position: absolute; width: 100%; height: 3px; 
+            background: #aaa; top: 15px; left: -50%; z-index: -1; transition: all 0.3s;
+        }
+        .progressbar li:first-child:after { content: none; }
+        /* 當前步驟狀態 */
+        .progressbar li.active { color: #007bff; }
+        .progressbar li.active:before { border-color: #007bff; background-color: #007bff; color: white; }
+        /* 完成步驟狀態 */
+        .progressbar li.completed { color: #28a745; }
+        .progressbar li.completed:before { content: '✓'; border-color: #28a745; background-color: #28a745; color: white; }
+        .progressbar li.completed + li:after { background: #28a745; }
+
+        /* --- 容器與按鈕樣式 --- */
+        .step-container { display: none; margin-top: 10px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .active-step { display: block; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .img-container { width: 100%; height: 50vh; margin-top: 15px; background: #ddd; overflow: hidden; border-radius: 4px; }
         .img-container img { display: block; max-width: 100%; } 
         
-        button { padding: 10px 20px; margin-top: 15px; font-size: 16px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        button { padding: 12px 24px; margin-top: 15px; font-size: 16px; font-weight: bold; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: background 0.2s; }
         button:active { background: #0056b3; }
-        input[type="file"] { margin-top: 10px; font-size: 16px; }
+        input[type="file"] { margin-top: 10px; font-size: 16px; width: 100%; }
         
-        .preview-box { width: 150px; height: 150px; border: 1px solid #ccc; margin: 10px auto; object-fit: contain; background: white; }
-        #result-box { margin-top: 20px; padding: 15px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: left; }
+        .preview-box { width: 120px; height: 120px; border: 1px solid #ccc; margin: 10px auto; object-fit: contain; background: white; border-radius: 4px; }
+        #result-box { margin-top: 20px; padding: 15px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: left; border-left: 5px solid #007bff; }
         .stars { color: #f39c12; font-size: 28px; font-weight: bold; margin: 10px 0; }
-        #loading { display: none; color: #007bff; font-weight: bold; margin-top: 20px; font-size: 18px; }
+        #loading { display: none; color: #007bff; font-weight: bold; margin-top: 20px; font-size: 16px; }
+        .step-title { margin-top: 0; color: #333; font-size: 18px; }
     </style>
 </head>
 <body>
 
     <h2>鋼印 AI 輔助判斷</h2>
 
+    <div class="progress-container">
+        <ul class="progressbar">
+            <li class="active" id="indicator-step1">上傳拓印</li>
+            <li id="indicator-step2">拍攝實體</li>
+            <li id="indicator-step3">AI 比對</li>
+        </ul>
+    </div>
+
     <div id="step1" class="step-container active-step">
-        <h3>步驟 1：上傳拓印圖檔 (JPG/PDF)</h3>
+        <h3 class="step-title">步驟 1：選擇拓印圖檔</h3>
         <input type="file" id="file1" accept="image/jpeg, image/png, application/pdf">
         <div class="img-container">
             <img id="image1" src="">
         </div>
-        <button id="cropBtn1" style="display:none;">確認擷取拓印範圍</button>
+        <button id="cropBtn1" style="display:none;">確認擷取範圍</button>
     </div>
 
     <div id="step2" class="step-container">
-        <h3>步驟 2：拍攝或上傳實際鋼印</h3>
+        <h3 class="step-title">步驟 2：拍攝實際鋼印</h3>
         <input type="file" id="file2" accept="image/*" capture="environment">
         <div class="img-container">
             <img id="image2" src="">
         </div>
-        <button id="cropBtn2" style="display:none;">確認擷取拍攝範圍</button>
+        <button id="cropBtn2" style="display:none;">確認擷取範圍</button>
     </div>
 
     <div id="step3" class="step-container">
-        <h3>步驟 3：確認比對圖片</h3>
-        <div style="display: flex; justify-content: space-around;">
+        <h3 class="step-title">步驟 3：確認影像並送出</h3>
+        <div style="display: flex; justify-content: space-around; align-items: center;">
             <div>
-                <p>拓印範圍</p>
+                <p style="margin-bottom: 5px; color: #555; font-weight: bold;">拓印</p>
                 <img id="preview1" class="preview-box">
             </div>
+            <div style="font-size: 24px; color: #aaa;">VS</div>
             <div>
-                <p>拍攝範圍</p>
+                <p style="margin-bottom: 5px; color: #555; font-weight: bold;">實體</p>
                 <img id="preview2" class="preview-box">
             </div>
         </div>
-        <button id="submitBtn">送出 AI 比對</button>
-        <div id="loading">AI 正在努力比對中，請稍候...</div>
+        <button id="submitBtn" style="width: 100%; margin-top: 20px;">送出 AI 進行比對</button>
+        <div id="loading">⏳ AI 正在仔細比對特徵中，請稍候...</div>
         
         <div id="result-box" style="display:none;">
-            <h4>比對結果：</h4>
+            <h4 style="margin-top: 0; color: #333;">比對結果：</h4>
             <div id="star-rating" class="stars"></div>
-            <p id="explanation-text"></p>
+            <p id="explanation-text" style="line-height: 1.5; color: #555;"></p>
         </div>
-        <button id="resetBtn" style="display:none;" onclick="location.reload()">重新比對</button>
+        <button id="resetBtn" style="display:none; width: 100%; background: #6c757d;" onclick="location.reload()">重新進行下一筆比對</button>
     </div>
 
     <script>
@@ -83,16 +118,25 @@
         let finalImg1Data = null;
         let finalImg2Data = null;
 
-        // 共用處理檔案與初始化裁切框的邏輯
+        // 控制進度條的函式
+        function updateProgress(currentStep) {
+            if (currentStep === 2) {
+                document.getElementById('indicator-step1').classList.remove('active');
+                document.getElementById('indicator-step1').classList.add('completed');
+                document.getElementById('indicator-step2').classList.add('active');
+            } else if (currentStep === 3) {
+                document.getElementById('indicator-step2').classList.remove('active');
+                document.getElementById('indicator-step2').classList.add('completed');
+                document.getElementById('indicator-step3').classList.add('active');
+            }
+        }
+
         function processFileAndCrop(file, imgElement, btnElement, stepNum) {
             if (!file) return;
-
-            // 定義啟動 Cropper 的函式
             const startCropper = (imageSrc) => {
-                // 等待圖片真正載入完畢後，再啟動裁切框
                 imgElement.onload = () => {
                     if (stepNum === 1) {
-                        if (cropper1) cropper1.destroy(); // 避免重複初始化
+                        if (cropper1) cropper1.destroy(); 
                         cropper1 = new Cropper(imgElement, { viewMode: 1, autoCropArea: 0.8 });
                     } else if (stepNum === 2) {
                         if (cropper2) cropper2.destroy();
@@ -100,10 +144,9 @@
                     }
                     btnElement.style.display = 'inline-block';
                 };
-                imgElement.src = imageSrc; // 觸發 onload 事件
+                imgElement.src = imageSrc; 
             };
 
-            // 判斷是否為 PDF
             if (file.type === 'application/pdf') {
                 const fileReader = new FileReader();
                 fileReader.onload = async function() {
@@ -117,8 +160,6 @@
                         canvas.height = viewport.height;
                         canvas.width = viewport.width;
                         await page.render({ canvasContext: context, viewport: viewport }).promise;
-                        
-                        // 將 Canvas 轉成圖片傳給 Cropper
                         startCropper(canvas.toDataURL('image/jpeg'));
                     } catch (error) {
                         alert("PDF 讀取失敗，請確認檔案。");
@@ -126,46 +167,43 @@
                 };
                 fileReader.readAsArrayBuffer(file);
             } else {
-                // 處理一般圖片
                 const reader = new FileReader();
                 reader.onload = (e) => startCropper(e.target.result);
                 reader.readAsDataURL(file);
             }
         }
 
-        // --- Step 1 事件監聽 ---
+        // --- Step 1 ---
         document.getElementById('file1').addEventListener('change', function(e) {
             processFileAndCrop(e.target.files[0], document.getElementById('image1'), document.getElementById('cropBtn1'), 1);
         });
 
         document.getElementById('cropBtn1').addEventListener('click', () => {
             if (!cropper1) return;
-            // 取得裁切後的圖片 Base64
             finalImg1Data = cropper1.getCroppedCanvas().toDataURL('image/jpeg');
             document.getElementById('preview1').src = finalImg1Data;
             
-            // 切換至步驟 2
             document.getElementById('step1').classList.remove('active-step');
             document.getElementById('step2').classList.add('active-step');
+            updateProgress(2); // 更新進度條
         });
 
-        // --- Step 2 事件監聽 ---
+        // --- Step 2 ---
         document.getElementById('file2').addEventListener('change', function(e) {
             processFileAndCrop(e.target.files[0], document.getElementById('image2'), document.getElementById('cropBtn2'), 2);
         });
 
         document.getElementById('cropBtn2').addEventListener('click', () => {
             if (!cropper2) return;
-            // 取得裁切後的圖片 Base64
             finalImg2Data = cropper2.getCroppedCanvas().toDataURL('image/jpeg');
             document.getElementById('preview2').src = finalImg2Data;
             
-            // 切換至步驟 3
             document.getElementById('step2').classList.remove('active-step');
             document.getElementById('step3').classList.add('active-step');
+            updateProgress(3); // 更新進度條
         });
 
-        // --- Step 3 送出 API ---
+        // --- Step 3 ---
         document.getElementById('submitBtn').addEventListener('click', async () => {
             if (!GAS_API_URL.startsWith("http")) {
                 alert("開發者提示：請先在原始碼中填入正確的 GAS_API_URL");
@@ -184,17 +222,20 @@
                 
                 const result = await response.json();
                 
-                // 渲染結果
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('result-box').style.display = 'block';
-                document.getElementById('resetBtn').style.display = 'inline-block';
+                document.getElementById('resetBtn').style.display = 'block';
+                
+                // 完成最後一步，讓最後一個圓圈也變綠色
+                document.getElementById('indicator-step3').classList.remove('active');
+                document.getElementById('indicator-step3').classList.add('completed');
                 
                 document.getElementById('star-rating').innerText = '★'.repeat(result.star) + '☆'.repeat(5 - result.star);
                 document.getElementById('explanation-text').innerText = result.explanation;
 
             } catch (error) {
                 alert("比對發生錯誤：" + error);
-                document.getElementById('submitBtn').style.display = 'inline-block';
+                document.getElementById('submitBtn').style.display = 'block';
                 document.getElementById('loading').style.display = 'none';
             }
         });
