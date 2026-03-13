@@ -10,15 +10,17 @@
     <style>
         body { font-family: sans-serif; margin: 0; padding: 15px; background: #f9f9f9; text-align: center; }
         
-        /* --- 進度條 (Progress Bar) 樣式 --- */
+        /* --- 進度條 (Progress Bar) 樣式修復 --- */
         .progress-container { width: 100%; max-width: 400px; margin: 20px auto 30px auto; }
-        .progressbar { counter-reset: step; padding: 0; display: flex; justify-content: space-between; list-style: none; position: relative; margin: 0; }
-        .progressbar li { list-style-type: none; width: 33.33%; position: relative; text-align: center; font-weight: bold; color: #aaa; font-size: 14px; z-index: 1; }
+        .progressbar { counter-reset: step; padding: 0; display: flex; justify-content: space-between; list-style: none; position: relative; margin: 0; z-index: 1; }
+        .progressbar li { list-style-type: none; width: 33.33%; position: relative; text-align: center; font-weight: bold; color: #aaa; font-size: 14px; }
         .progressbar li:before { 
             content: counter(step); counter-increment: step; 
             width: 30px; height: 30px; line-height: 28px; border: 2px solid #aaa; 
             display: block; text-align: center; margin: 0 auto 10px auto; 
-            border-radius: 50%; background-color: #f9f9f9; transition: all 0.3s;
+            border-radius: 50%; background-color: #f9f9f9; /* 加入與背景相同的底色 */
+            position: relative; z-index: 2; /* 確保圓圈在線條之上 */
+            transition: all 0.3s;
         }
         /* 連接線 */
         .progressbar li:after { 
@@ -34,23 +36,41 @@
         .progressbar li.completed:before { content: '✓'; border-color: #28a745; background-color: #28a745; color: white; }
         .progressbar li.completed + li:after { background: #28a745; }
 
-        /* --- 容器與按鈕樣式 --- */
+        /* --- 容器與一般按鈕樣式 --- */
         .step-container { display: none; margin-top: 10px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .active-step { display: block; animation: fadeIn 0.5s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .active-step { display: block; animation: fadeIn 0.4s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         
-        .img-container { width: 100%; height: 50vh; margin-top: 15px; background: #ddd; overflow: hidden; border-radius: 4px; }
+        .img-container { width: 100%; height: 45vh; margin-top: 15px; background: #ddd; overflow: hidden; border-radius: 4px; }
         .img-container img { display: block; max-width: 100%; } 
         
         button { padding: 12px 24px; margin-top: 15px; font-size: 16px; font-weight: bold; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: background 0.2s; }
         button:active { background: #0056b3; }
-        input[type="file"] { margin-top: 10px; font-size: 16px; width: 100%; }
-        
+        .btn-secondary { background: #6c757d; margin-right: 10px; }
+        .btn-secondary:active { background: #5a6268; }
+
+        /* --- 自訂檔案上傳按鈕 --- */
+        input[type="file"] { display: none; /* 隱藏原本醜醜的 input */ }
+        .custom-file-upload {
+            display: inline-block; padding: 12px 24px; cursor: pointer;
+            background-color: #17a2b8; color: white; border-radius: 5px;
+            font-size: 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: background 0.2s; margin-bottom: 5px; width: 80%; max-width: 250px;
+        }
+        .custom-file-upload:active { background-color: #138496; }
+        .file-name-display { font-size: 13px; color: #666; margin-bottom: 10px; word-break: break-all; min-height: 15px; }
+
+        /* --- PDF 控制面板 --- */
+        .pdf-controls { display: none; justify-content: center; align-items: center; gap: 15px; margin-top: 10px; background: #f1f3f5; padding: 10px; border-radius: 5px; }
+        .pdf-controls button { margin: 0; padding: 6px 12px; font-size: 14px; background: #495057; }
+        .pdf-controls button:disabled { background: #ced4da; cursor: not-allowed; box-shadow: none; }
+        .pdf-page-info { font-size: 14px; font-weight: bold; color: #333; }
+
         .preview-box { width: 120px; height: 120px; border: 1px solid #ccc; margin: 10px auto; object-fit: contain; background: white; border-radius: 4px; }
         #result-box { margin-top: 20px; padding: 15px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: left; border-left: 5px solid #007bff; }
         .stars { color: #f39c12; font-size: 28px; font-weight: bold; margin: 10px 0; }
         #loading { display: none; color: #007bff; font-weight: bold; margin-top: 20px; font-size: 16px; }
-        .step-title { margin-top: 0; color: #333; font-size: 18px; }
+        .step-title { margin-top: 0; color: #333; font-size: 18px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -59,44 +79,72 @@
 
     <div class="progress-container">
         <ul class="progressbar">
-            <li class="active" id="indicator-step1">上傳拓印</li>
-            <li id="indicator-step2">拍攝實體</li>
+            <li class="active" id="indicator-step1">拓印設定</li>
+            <li id="indicator-step2">實體設定</li>
             <li id="indicator-step3">AI 比對</li>
         </ul>
     </div>
 
     <div id="step1" class="step-container active-step">
-        <h3 class="step-title">步驟 1：選擇拓印圖檔</h3>
-        <input type="file" id="file1" accept="image/jpeg, image/png, application/pdf">
+        <h3 class="step-title">步驟 1：取得拓印影像</h3>
+        
+        <label for="file1" class="custom-file-upload">📁 選擇檔案或拍照</label>
+        <input type="file" id="file1" accept="image/*, application/pdf">
+        <div id="filename1" class="file-name-display">尚未選擇任何檔案</div>
+
+        <div id="pdf-controls-1" class="pdf-controls">
+            <button id="prev-page-1">上一頁</button>
+            <span id="page-info-1" class="pdf-page-info">第 1 頁 / 共 1 頁</span>
+            <button id="next-page-1">下一頁</button>
+        </div>
+
         <div class="img-container">
             <img id="image1" src="">
         </div>
-        <button id="cropBtn1" style="display:none;">確認擷取範圍</button>
+        <button id="cropBtn1" style="display:none; width: 100%;">下一步：確認拓印範圍</button>
     </div>
 
     <div id="step2" class="step-container">
-        <h3 class="step-title">步驟 2：拍攝實際鋼印</h3>
-        <input type="file" id="file2" accept="image/*" capture="environment">
+        <h3 class="step-title">步驟 2：取得實體鋼印影像</h3>
+        
+        <label for="file2" class="custom-file-upload">📷 選擇檔案或拍照</label>
+        <input type="file" id="file2" accept="image/*, application/pdf">
+        <div id="filename2" class="file-name-display">尚未選擇任何檔案</div>
+
+        <div id="pdf-controls-2" class="pdf-controls">
+            <button id="prev-page-2">上一頁</button>
+            <span id="page-info-2" class="pdf-page-info">第 1 頁 / 共 1 頁</span>
+            <button id="next-page-2">下一頁</button>
+        </div>
+
         <div class="img-container">
             <img id="image2" src="">
         </div>
-        <button id="cropBtn2" style="display:none;">確認擷取範圍</button>
+        <div style="display: flex; margin-top: 15px;">
+            <button id="backBtn1" class="btn-secondary" style="flex: 1;">回上一步</button>
+            <button id="cropBtn2" style="display:none; flex: 2;">下一步：確認實體範圍</button>
+        </div>
     </div>
 
     <div id="step3" class="step-container">
         <h3 class="step-title">步驟 3：確認影像並送出</h3>
         <div style="display: flex; justify-content: space-around; align-items: center;">
             <div>
-                <p style="margin-bottom: 5px; color: #555; font-weight: bold;">拓印</p>
+                <p style="margin-bottom: 5px; color: #555; font-weight: bold;">拓印範圍</p>
                 <img id="preview1" class="preview-box">
             </div>
             <div style="font-size: 24px; color: #aaa;">VS</div>
             <div>
-                <p style="margin-bottom: 5px; color: #555; font-weight: bold;">實體</p>
+                <p style="margin-bottom: 5px; color: #555; font-weight: bold;">實體範圍</p>
                 <img id="preview2" class="preview-box">
             </div>
         </div>
-        <button id="submitBtn" style="width: 100%; margin-top: 20px;">送出 AI 進行比對</button>
+        
+        <div style="display: flex; margin-top: 20px;" id="action-buttons">
+            <button id="backBtn2" class="btn-secondary" style="flex: 1;">回上一步</button>
+            <button id="submitBtn" style="flex: 2;">送出 AI 進行比對</button>
+        </div>
+        
         <div id="loading">⏳ AI 正在仔細比對特徵中，請稍候...</div>
         
         <div id="result-box" style="display:none;">
@@ -104,7 +152,7 @@
             <div id="star-rating" class="stars"></div>
             <p id="explanation-text" style="line-height: 1.5; color: #555;"></p>
         </div>
-        <button id="resetBtn" style="display:none; width: 100%; background: #6c757d;" onclick="location.reload()">重新進行下一筆比對</button>
+        <button id="resetBtn" style="display:none; width: 100%; background: #28a745; margin-top: 15px;" onclick="location.reload()">開始新的一筆比對</button>
     </div>
 
     <script>
@@ -113,39 +161,59 @@
         // ★★★ 請將此處替換為你部署的 GAS Web App URL ★★★
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwOz3wneM3TYvaA7UAdw0_AP-kiSTU6nJSYJn2LcrdL5F3mXYZIybb0JiqWKB9Jc4qwnA/exec"; 
 
-        let cropper1 = null;
-        let cropper2 = null;
-        let finalImg1Data = null;
-        let finalImg2Data = null;
+        let cropper1 = null, cropper2 = null;
+        let finalImg1Data = null, finalImg2Data = null;
+        
+        // PDF 狀態管理
+        let pdfDoc1 = null, pdfPage1 = 1;
+        let pdfDoc2 = null, pdfPage2 = 1;
 
-        // 控制進度條的函式
-        function updateProgress(currentStep) {
-            if (currentStep === 2) {
-                document.getElementById('indicator-step1').classList.remove('active');
-                document.getElementById('indicator-step1').classList.add('completed');
-                document.getElementById('indicator-step2').classList.add('active');
-            } else if (currentStep === 3) {
-                document.getElementById('indicator-step2').classList.remove('active');
-                document.getElementById('indicator-step2').classList.add('completed');
-                document.getElementById('indicator-step3').classList.add('active');
-            }
+        function updateProgress(step) {
+            document.querySelectorAll('.progressbar li').forEach((li, index) => {
+                li.className = '';
+                if (index + 1 < step) li.classList.add('completed');
+                else if (index + 1 === step) li.classList.add('active');
+            });
         }
 
-        function processFileAndCrop(file, imgElement, btnElement, stepNum) {
-            if (!file) return;
-            const startCropper = (imageSrc) => {
-                imgElement.onload = () => {
-                    if (stepNum === 1) {
-                        if (cropper1) cropper1.destroy(); 
-                        cropper1 = new Cropper(imgElement, { viewMode: 1, autoCropArea: 0.8 });
-                    } else if (stepNum === 2) {
-                        if (cropper2) cropper2.destroy();
-                        cropper2 = new Cropper(imgElement, { viewMode: 1, autoCropArea: 0.8 });
-                    }
-                    btnElement.style.display = 'inline-block';
-                };
-                imgElement.src = imageSrc; 
+        function switchStep(fromStep, toStep) {
+            document.getElementById(`step${fromStep}`).classList.remove('active-step');
+            document.getElementById(`step${toStep}`).classList.add('active-step');
+            updateProgress(toStep);
+        }
+
+        // 渲染指定的 PDF 頁面
+        async function renderPdfPage(pdfDoc, pageNum, imgElement, btnElement, stepNum) {
+            const page = await pdfDoc.getPage(pageNum);
+            const viewport = page.getViewport({ scale: 2.0 });
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            await page.render({ canvasContext: context, viewport: viewport }).promise;
+            
+            imgElement.onload = () => {
+                if (stepNum === 1) {
+                    if (cropper1) cropper1.destroy(); 
+                    cropper1 = new Cropper(imgElement, { viewMode: 1, autoCropArea: 0.8 });
+                } else {
+                    if (cropper2) cropper2.destroy();
+                    cropper2 = new Cropper(imgElement, { viewMode: 1, autoCropArea: 0.8 });
+                }
+                btnElement.style.display = 'inline-block';
             };
+            imgElement.src = canvas.toDataURL('image/jpeg');
+            
+            // 更新 UI 控制面板
+            document.getElementById(`page-info-${stepNum}`).innerText = `第 ${pageNum} 頁 / 共 ${pdfDoc.numPages} 頁`;
+            document.getElementById(`prev-page-${stepNum}`).disabled = pageNum <= 1;
+            document.getElementById(`next-page-${stepNum}`).disabled = pageNum >= pdfDoc.numPages;
+        }
+
+        function processFile(file, imgElement, btnElement, stepNum, filenameDisplay) {
+            if (!file) return;
+            filenameDisplay.innerText = file.name;
+            document.getElementById(`pdf-controls-${stepNum}`).style.display = 'none'; // 預設隱藏 PDF 控制
 
             if (file.type === 'application/pdf') {
                 const fileReader = new FileReader();
@@ -153,64 +221,75 @@
                     try {
                         const typedarray = new Uint8Array(this.result);
                         const pdf = await pdfjsLib.getDocument(typedarray).promise;
-                        const page = await pdf.getPage(1);
-                        const viewport = page.getViewport({ scale: 2.0 });
-                        const canvas = document.createElement('canvas');
-                        const context = canvas.getContext('2d');
-                        canvas.height = viewport.height;
-                        canvas.width = viewport.width;
-                        await page.render({ canvasContext: context, viewport: viewport }).promise;
-                        startCropper(canvas.toDataURL('image/jpeg'));
-                    } catch (error) {
-                        alert("PDF 讀取失敗，請確認檔案。");
-                    }
+                        document.getElementById(`pdf-controls-${stepNum}`).style.display = 'flex'; // 顯示 PDF 控制
+                        
+                        if (stepNum === 1) {
+                            pdfDoc1 = pdf; pdfPage1 = 1;
+                            renderPdfPage(pdfDoc1, pdfPage1, imgElement, btnElement, 1);
+                        } else {
+                            pdfDoc2 = pdf; pdfPage2 = 1;
+                            renderPdfPage(pdfDoc2, pdfPage2, imgElement, btnElement, 2);
+                        }
+                    } catch (error) { alert("PDF 讀取失敗，請確認檔案是否損壞。"); }
                 };
                 fileReader.readAsArrayBuffer(file);
             } else {
+                // 處理一般圖片
                 const reader = new FileReader();
-                reader.onload = (e) => startCropper(e.target.result);
+                reader.onload = (e) => {
+                    imgElement.onload = () => {
+                        if (stepNum === 1) {
+                            if (cropper1) cropper1.destroy(); 
+                            cropper1 = new Cropper(imgElement, { viewMode: 1, autoCropArea: 0.8 });
+                        } else {
+                            if (cropper2) cropper2.destroy();
+                            cropper2 = new Cropper(imgElement, { viewMode: 1, autoCropArea: 0.8 });
+                        }
+                        btnElement.style.display = 'inline-block';
+                    };
+                    imgElement.src = e.target.result;
+                };
                 reader.readAsDataURL(file);
             }
         }
 
-        // --- Step 1 ---
+        // --- Step 1 事件 ---
         document.getElementById('file1').addEventListener('change', function(e) {
-            processFileAndCrop(e.target.files[0], document.getElementById('image1'), document.getElementById('cropBtn1'), 1);
+            processFile(e.target.files[0], document.getElementById('image1'), document.getElementById('cropBtn1'), 1, document.getElementById('filename1'));
         });
-
+        document.getElementById('prev-page-1').addEventListener('click', () => { if(pdfPage1 > 1) { pdfPage1--; renderPdfPage(pdfDoc1, pdfPage1, document.getElementById('image1'), document.getElementById('cropBtn1'), 1); }});
+        document.getElementById('next-page-1').addEventListener('click', () => { if(pdfPage1 < pdfDoc1.numPages) { pdfPage1++; renderPdfPage(pdfDoc1, pdfPage1, document.getElementById('image1'), document.getElementById('cropBtn1'), 1); }});
+        
         document.getElementById('cropBtn1').addEventListener('click', () => {
             if (!cropper1) return;
             finalImg1Data = cropper1.getCroppedCanvas().toDataURL('image/jpeg');
             document.getElementById('preview1').src = finalImg1Data;
-            
-            document.getElementById('step1').classList.remove('active-step');
-            document.getElementById('step2').classList.add('active-step');
-            updateProgress(2); // 更新進度條
+            switchStep(1, 2);
         });
 
-        // --- Step 2 ---
+        // --- Step 2 事件 ---
         document.getElementById('file2').addEventListener('change', function(e) {
-            processFileAndCrop(e.target.files[0], document.getElementById('image2'), document.getElementById('cropBtn2'), 2);
+            processFile(e.target.files[0], document.getElementById('image2'), document.getElementById('cropBtn2'), 2, document.getElementById('filename2'));
         });
+        document.getElementById('prev-page-2').addEventListener('click', () => { if(pdfPage2 > 1) { pdfPage2--; renderPdfPage(pdfDoc2, pdfPage2, document.getElementById('image2'), document.getElementById('cropBtn2'), 2); }});
+        document.getElementById('next-page-2').addEventListener('click', () => { if(pdfPage2 < pdfDoc2.numPages) { pdfPage2++; renderPdfPage(pdfDoc2, pdfPage2, document.getElementById('image2'), document.getElementById('cropBtn2'), 2); }});
 
+        document.getElementById('backBtn1').addEventListener('click', () => switchStep(2, 1));
+        
         document.getElementById('cropBtn2').addEventListener('click', () => {
             if (!cropper2) return;
             finalImg2Data = cropper2.getCroppedCanvas().toDataURL('image/jpeg');
             document.getElementById('preview2').src = finalImg2Data;
-            
-            document.getElementById('step2').classList.remove('active-step');
-            document.getElementById('step3').classList.add('active-step');
-            updateProgress(3); // 更新進度條
+            switchStep(2, 3);
         });
 
-        // --- Step 3 ---
+        // --- Step 3 事件 ---
+        document.getElementById('backBtn2').addEventListener('click', () => switchStep(3, 2));
+
         document.getElementById('submitBtn').addEventListener('click', async () => {
-            if (!GAS_API_URL.startsWith("http")) {
-                alert("開發者提示：請先在原始碼中填入正確的 GAS_API_URL");
-                return;
-            }
+            if (!GAS_API_URL.startsWith("http")) { alert("開發者提示：請先填入 GAS_API_URL"); return; }
             
-            document.getElementById('submitBtn').style.display = 'none';
+            document.getElementById('action-buttons').style.display = 'none';
             document.getElementById('loading').style.display = 'block';
 
             try {
@@ -219,23 +298,19 @@
                     body: JSON.stringify({ img1: finalImg1Data, img2: finalImg2Data }),
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' }
                 });
-                
                 const result = await response.json();
                 
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('result-box').style.display = 'block';
                 document.getElementById('resetBtn').style.display = 'block';
-                
-                // 完成最後一步，讓最後一個圓圈也變綠色
-                document.getElementById('indicator-step3').classList.remove('active');
-                document.getElementById('indicator-step3').classList.add('completed');
+                document.querySelector('#indicator-step3').classList.remove('active');
+                document.querySelector('#indicator-step3').classList.add('completed');
                 
                 document.getElementById('star-rating').innerText = '★'.repeat(result.star) + '☆'.repeat(5 - result.star);
                 document.getElementById('explanation-text').innerText = result.explanation;
-
             } catch (error) {
                 alert("比對發生錯誤：" + error);
-                document.getElementById('submitBtn').style.display = 'block';
+                document.getElementById('action-buttons').style.display = 'flex';
                 document.getElementById('loading').style.display = 'none';
             }
         });
