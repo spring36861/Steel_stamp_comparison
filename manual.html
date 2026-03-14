@@ -6,70 +6,22 @@
     <title>鋼印/印鑑半透明比對工具</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #333;
-            color: white;
-            font-family: sans-serif;
-            overflow: hidden; /* 防止滾動 */
-        }
-        #controls {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px;
-            box-sizing: border-box;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .control-group {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .control-group label {
-            width: 80px;
-            font-size: 14px;
-        }
-        .control-group input[type="range"] {
-            flex-grow: 1;
-            margin: 0 10px;
-        }
-        #camera-container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-        }
-        #camera-feed {
-            min-width: 100%;
-            min-height: 100%;
-            object-fit: cover;
-        }
+        body { margin: 0; padding: 0; background-color: #333; color: white; font-family: sans-serif; overflow: hidden; touch-action: none; /* 防止原生手勢干擾 */ }
+        #controls { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0, 0, 0, 0.8); padding: 15px; box-sizing: border-box; z-index: 100; display: flex; flex-direction: column; gap: 10px; }
+        .control-group { display: flex; align-items: center; justify-content: space-between; }
+        .control-group label { width: 80px; font-size: 14px; }
+        .control-group input[type="range"] { flex-grow: 1; margin: 0 10px; }
+        #camera-container { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+        #camera-feed { min-width: 100%; min-height: 100%; object-fit: cover; }
         #overlay-image {
-            position: absolute;
-            top: 50%;
-            left: 50%;
+            position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%) scale(1);
-            opacity: 0.5; /* 預設半透明度 */
-            cursor: move;
-            touch-action: none; /* 防止觸控拖曳時觸發瀏覽器預設行為 */
-            border: 2px dashed rgba(255, 255, 255, 0.5); /* 加個虛線框讓使用者知道邊界 */
-            display: none; /* 初始隱藏，讀取檔案後顯示 */
-            max-width: 80vw;
+            opacity: 0.5; cursor: move;
+            border: 2px dashed rgba(255, 255, 255, 0.5);
+            display: none; max-width: 80vw;
+            transform-origin: center center; /* 確保從中心點縮放 */
         }
-        input[type="file"] {
-            width: 100%;
-            color: white;
-        }
+        input[type="file"] { width: 100%; color: white; }
     </style>
 </head>
 <body>
@@ -96,7 +48,6 @@
     </div>
 
     <script>
-        // 設定 PDF.js worker
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
         const video = document.getElementById('camera-feed');
@@ -108,71 +59,50 @@
         // --- 1. 啟動後置相機 ---
         async function startCamera() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: "environment" } // 強制使用後鏡頭
-                });
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                 video.srcObject = stream;
-            } catch (err) {
-                console.error("無法存取相機:", err);
-                alert("無法開啟相機，請確認瀏覽器權限設定。");
-            }
+            } catch (err) { alert("無法開啟相機，請確認瀏覽器權限設定。"); }
         }
         startCamera();
 
-        // --- 2. 處理檔案上傳 (JPG/PNG & PDF) ---
+        // --- 2. 處理檔案上傳 ---
         fileInput.addEventListener('change', async function(e) {
             const file = e.target.files[0];
             if (!file) return;
 
             if (file.type === 'application/pdf') {
-                // 處理 PDF 檔案
                 const fileReader = new FileReader();
                 fileReader.onload = async function() {
                     const typedarray = new Uint8Array(this.result);
                     try {
                         const pdf = await pdfjsLib.getDocument(typedarray).promise;
-                        const page = await pdf.getPage(1); // 預設讀取第一頁
-                        const viewport = page.getViewport({ scale: 1.5 }); // 設定解析度
-                        
+                        const page = await pdf.getPage(1);
+                        const viewport = page.getViewport({ scale: 1.5 });
                         const canvas = document.createElement('canvas');
                         const context = canvas.getContext('2d');
-                        canvas.height = viewport.height;
-                        canvas.width = viewport.width;
-
+                        canvas.height = viewport.height; canvas.width = viewport.width;
                         await page.render({ canvasContext: context, viewport: viewport }).promise;
-                        
-                        // 將 Canvas 轉成圖片 URL 放入 img 標籤
                         overlayImage.src = canvas.toDataURL('image/png');
                         resetOverlay();
-                    } catch (error) {
-                        alert("PDF 讀取失敗");
-                        console.error(error);
-                    }
+                    } catch (error) { alert("PDF 讀取失敗"); }
                 };
                 fileReader.readAsArrayBuffer(file);
             } else if (file.type.startsWith('image/')) {
-                // 處理一般圖片
                 const fileReader = new FileReader();
-                fileReader.onload = function(e) {
-                    overlayImage.src = e.target.result;
-                    resetOverlay();
-                };
+                fileReader.onload = function(e) { overlayImage.src = e.target.result; resetOverlay(); };
                 fileReader.readAsDataURL(file);
-            } else {
-                alert("請上傳 JPG, PNG 或 PDF 格式的檔案。");
             }
         });
 
         function resetOverlay() {
             overlayImage.style.display = 'block';
-            xOffset = 0;
-            yOffset = 0;
-            scaleSlider.value = 1;
+            xOffset = 0; yOffset = 0; currentX = 0; currentY = 0;
+            currentScale = 1; scaleSlider.value = 1;
             document.getElementById('scale-val').innerText = '1.0x';
             setTransform(0, 0, 1);
         }
 
-        // --- 3. UI 控制 (透明度與縮放) ---
+        // --- 3. UI 控制 (透明度與滑桿縮放同步) ---
         opacitySlider.addEventListener('input', function() {
             overlayImage.style.opacity = this.value;
             document.getElementById('opacity-val').innerText = Math.round(this.value * 100) + '%';
@@ -184,58 +114,99 @@
             setTransform(currentX, currentY, currentScale);
         });
 
-        // --- 4. 觸控與滑鼠拖曳邏輯 ---
+        // --- 4. 觸控與手勢邏輯 (單指拖曳 + 雙指縮放) ---
         let isDragging = false;
         let startX, startY;
         let currentX = 0, currentY = 0;
         let xOffset = 0, yOffset = 0;
         let currentScale = 1;
+        
+        // 雙指縮放專用變數
+        let initialPinchDistance = null;
+        let initialScale = 1;
 
         function setTransform(x, y, scale) {
-            // 使用 translate(-50%, -50%) 來保持圖片置中，再加上位移和縮放
             overlayImage.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(${scale})`;
         }
 
-        function dragStart(e) {
-            if (e.type === "touchstart") {
+        // 計算兩根手指之間的直線距離
+        function getDistance(touches) {
+            return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
+        }
+
+        function touchStart(e) {
+            if (e.touches.length === 1) {
+                // 單指：開始拖曳
+                isDragging = true;
                 startX = e.touches[0].clientX - xOffset;
                 startY = e.touches[0].clientY - yOffset;
-            } else {
-                startX = e.clientX - xOffset;
-                startY = e.clientY - yOffset;
-            }
-            if (e.target === overlayImage) {
-                isDragging = true;
+            } else if (e.touches.length === 2) {
+                // 雙指：開始縮放
+                isDragging = false; // 暫停拖曳避免畫面亂跳
+                initialPinchDistance = getDistance(e.touches);
+                initialScale = currentScale;
             }
         }
 
-        function dragEnd() {
-            isDragging = false;
-        }
-
-        function drag(e) {
-            if (isDragging) {
-                e.preventDefault(); // 防止手機螢幕跟著滑動
-                if (e.type === "touchmove") {
-                    currentX = e.touches[0].clientX - startX;
-                    currentY = e.touches[0].clientY - startY;
-                } else {
-                    currentX = e.clientX - startX;
-                    currentY = e.clientY - startY;
-                }
+        function touchMove(e) {
+            e.preventDefault(); // 絕對需要：防止手機螢幕跟著滑動或觸發下拉更新
+            
+            if (e.touches.length === 1 && isDragging) {
+                // 單指拖曳中
+                currentX = e.touches[0].clientX - startX;
+                currentY = e.touches[0].clientY - startY;
                 xOffset = currentX;
                 yOffset = currentY;
+                setTransform(currentX, currentY, currentScale);
+                
+            } else if (e.touches.length === 2 && initialPinchDistance) {
+                // 雙指縮放中
+                const currentDistance = getDistance(e.touches);
+                const scaleDelta = currentDistance / initialPinchDistance;
+                
+                // 計算新比例，並限制在 0.1 到 3 倍之間
+                currentScale = Math.min(Math.max(0.1, initialScale * scaleDelta), 3);
+                
+                // 同步更新下方的滑桿 UI
+                scaleSlider.value = currentScale;
+                document.getElementById('scale-val').innerText = currentScale.toFixed(1) + 'x';
+                
                 setTransform(currentX, currentY, currentScale);
             }
         }
 
-        overlayImage.addEventListener("touchstart", dragStart, false);
-        overlayImage.addEventListener("touchend", dragEnd, false);
-        overlayImage.addEventListener("touchmove", drag, { passive: false }); // passive: false 才能 preventDefault
+        function touchEnd(e) {
+            if (e.touches.length < 2) {
+                initialPinchDistance = null; // 結束縮放狀態
+            }
+            if (e.touches.length === 1) {
+                // 如果放開一根手指剩下一根，無縫切換回拖曳模式
+                isDragging = true;
+                startX = e.touches[0].clientX - xOffset;
+                startY = e.touches[0].clientY - yOffset;
+            } else if (e.touches.length === 0) {
+                isDragging = false;
+            }
+        }
 
-        overlayImage.addEventListener("mousedown", dragStart, false);
-        window.addEventListener("mouseup", dragEnd, false);
-        window.addEventListener("mousemove", drag, false);
+        // 綁定觸控事件
+        overlayImage.addEventListener("touchstart", touchStart, { passive: false });
+        overlayImage.addEventListener("touchmove", touchMove, { passive: false });
+        overlayImage.addEventListener("touchend", touchEnd, { passive: false });
+        overlayImage.addEventListener("touchcancel", touchEnd, { passive: false });
+
+        // 保留電腦版滑鼠拖曳相容性
+        overlayImage.addEventListener("mousedown", (e) => {
+            isDragging = true; startX = e.clientX - xOffset; startY = e.clientY - yOffset;
+        });
+        window.addEventListener("mouseup", () => isDragging = false);
+        window.addEventListener("mousemove", (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            currentX = e.clientX - startX; currentY = e.clientY - startY;
+            xOffset = currentX; yOffset = currentY;
+            setTransform(currentX, currentY, currentScale);
+        });
 
     </script>
 </body>
