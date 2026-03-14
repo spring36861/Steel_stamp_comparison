@@ -2,17 +2,163 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>鋼印比對系統</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>危險性機械及設備 AI鋼印比對工具</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f0f2f5; }
-        .btn { display: block; width: 80%; max-width: 300px; padding: 20px; margin: 15px; text-align: center; text-decoration: none; color: white; background: #007bff; border-radius: 10px; font-size: 18px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .btn-secondary { background: #28a745; }
+        /* 基礎重置與背景設定 */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        /* 標題區塊設計 */
+        .header-section {
+            text-align: center;
+            margin-top: 5vh;
+            margin-bottom: 40px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #6c757d;
+            font-weight: 600;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            text-shadow: 1px 1px 1px rgba(255,255,255,0.8);
+        }
+
+        .main-title {
+            font-size: 2.2rem;
+            color: #2c3e50;
+            margin: 0;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        /* 讓 AI 兩個字呈現科技感 */
+        .main-title span {
+            color: #007bff;
+        }
+
+        /* 裝飾分隔線 */
+        .divider {
+            width: 50px;
+            height: 4px;
+            background: linear-gradient(90deg, #007bff, #17a2b8);
+            margin: 15px auto 0 auto;
+            border-radius: 2px;
+        }
+
+        /* 卡片選單區塊 */
+        .menu-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        /* 選單卡片設計 */
+        .menu-card {
+            background: white;
+            padding: 25px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #eaeaea;
+        }
+
+        /* 點擊時的微動畫 */
+        .menu-card:active {
+            transform: scale(0.98);
+        }
+
+        /* 左側顏色條標識 */
+        .menu-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            background-color: #007bff;
+        }
+
+        .menu-card.manual::before {
+            background-color: #28a745;
+        }
+
+        .card-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .card-title {
+            margin: 0 0 8px 0;
+            font-size: 1.3rem;
+            color: #343a40;
+            font-weight: bold;
+        }
+
+        .card-desc {
+            margin: 0;
+            color: #6c757d;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        /* 底部版權/版本號 */
+        .footer {
+            margin-top: auto;
+            padding-top: 30px;
+            color: #adb5bd;
+            font-size: 0.85rem;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-    <h2>請選擇比對模式</h2>
-    <a href="ai_assist.html" class="btn">鋼印 AI 輔助判斷</a>
-    <a href="manual.html" class="btn btn-secondary">鋼印投影人工判斷</a>
+
+    <div class="header-section">
+        <div class="subtitle">⚙️ 危險性機械及設備</div>
+        <h1 class="main-title"><span>AI</span> 鋼印比對工具</h1>
+        <div class="divider"></div>
+    </div>
+
+    <div class="menu-container">
+        
+        <a href="ai_assist.html" class="menu-card">
+            <div class="card-icon">🤖</div>
+            <h2 class="card-title">雙引擎 AI 自動比對</h2>
+            <p class="card-desc">上傳拓印與實體照片，由系統自動計算幾何最大誤差，並進行微觀特徵交叉比對。</p>
+        </a>
+
+        <a href="manual.html" class="menu-card manual">
+            <div class="card-icon">🖐️</div>
+            <h2 class="card-title">人工疊影輔助判斷</h2>
+            <p class="card-desc">開啟相機並重疊半透明拓印圖層，支援全螢幕雙指縮放與拖曳，適用於極端模糊案例。</p>
+        </a>
+
+    </div>
+
+    <div class="footer">
+        中華產業機械設備協會 © 2026<br>
+        System Version 5.0 (雙引擎建檔版)
+    </div>
+
 </body>
 </html>
