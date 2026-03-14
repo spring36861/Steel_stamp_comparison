@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>鋼印 AI 輔助判斷</title>
+    <title>鋼印 AI 輔助判斷 (雙引擎版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <style>
         body { font-family: sans-serif; margin: 0; padding: 15px; background: #f9f9f9; text-align: center; }
         
-        /* --- 進度條 (Progress Bar) 樣式修復 --- */
+        /* --- 進度條 (Progress Bar) 樣式 --- */
         .progress-container { width: 100%; max-width: 400px; margin: 20px auto 30px auto; }
         .progressbar { counter-reset: step; padding: 0; display: flex; justify-content: space-between; list-style: none; position: relative; margin: 0; z-index: 1; }
         .progressbar li { list-style-type: none; width: 33.33%; position: relative; text-align: center; font-weight: bold; color: #aaa; font-size: 14px; }
@@ -18,20 +18,17 @@
             content: counter(step); counter-increment: step; 
             width: 30px; height: 30px; line-height: 28px; border: 2px solid #aaa; 
             display: block; text-align: center; margin: 0 auto 10px auto; 
-            border-radius: 50%; background-color: #f9f9f9; /* 加入與背景相同的底色 */
-            position: relative; z-index: 2; /* 確保圓圈在線條之上 */
+            border-radius: 50%; background-color: #f9f9f9; 
+            position: relative; z-index: 2; 
             transition: all 0.3s;
         }
-        /* 連接線 */
         .progressbar li:after { 
             content: ''; position: absolute; width: 100%; height: 3px; 
             background: #aaa; top: 15px; left: -50%; z-index: -1; transition: all 0.3s;
         }
         .progressbar li:first-child:after { content: none; }
-        /* 當前步驟狀態 */
         .progressbar li.active { color: #007bff; }
         .progressbar li.active:before { border-color: #007bff; background-color: #007bff; color: white; }
-        /* 完成步驟狀態 */
         .progressbar li.completed { color: #28a745; }
         .progressbar li.completed:before { content: '✓'; border-color: #28a745; background-color: #28a745; color: white; }
         .progressbar li.completed + li:after { background: #28a745; }
@@ -50,7 +47,7 @@
         .btn-secondary:active { background: #5a6268; }
 
         /* --- 自訂檔案上傳按鈕 --- */
-        input[type="file"] { display: none; /* 隱藏原本醜醜的 input */ }
+        input[type="file"] { display: none; }
         .custom-file-upload {
             display: inline-block; padding: 12px 24px; cursor: pointer;
             background-color: #17a2b8; color: white; border-radius: 5px;
@@ -67,8 +64,10 @@
         .pdf-page-info { font-size: 14px; font-weight: bold; color: #333; }
 
         .preview-box { width: 120px; height: 120px; border: 1px solid #ccc; margin: 10px auto; object-fit: contain; background: white; border-radius: 4px; }
-        #result-box { margin-top: 20px; padding: 15px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: left; border-left: 5px solid #007bff; }
-        .stars { color: #f39c12; font-size: 28px; font-weight: bold; margin: 10px 0; }
+        
+        /* --- 結果顯示區 --- */
+        #result-box { margin-top: 20px; padding: 15px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: left; }
+        .stars { color: #f39c12; font-size: 36px; font-weight: bold; margin: 10px 0; text-align: center; }
         #loading { display: none; color: #007bff; font-weight: bold; margin-top: 20px; font-size: 16px; }
         .step-title { margin-top: 0; color: #333; font-size: 18px; margin-bottom: 15px; }
     </style>
@@ -87,7 +86,6 @@
 
     <div id="step1" class="step-container active-step">
         <h3 class="step-title">步驟 1：取得拓印影像</h3>
-        
         <label for="file1" class="custom-file-upload">📁 選擇檔案或拍照</label>
         <input type="file" id="file1" accept="image/*, application/pdf">
         <div id="filename1" class="file-name-display">尚未選擇任何檔案</div>
@@ -106,7 +104,6 @@
 
     <div id="step2" class="step-container">
         <h3 class="step-title">步驟 2：取得實體鋼印影像</h3>
-        
         <label for="file2" class="custom-file-upload">📷 選擇檔案或拍照</label>
         <input type="file" id="file2" accept="image/*, application/pdf">
         <div id="filename2" class="file-name-display">尚未選擇任何檔案</div>
@@ -142,31 +139,42 @@
         
         <div style="display: flex; margin-top: 20px;" id="action-buttons">
             <button id="backBtn2" class="btn-secondary" style="flex: 1;">回上一步</button>
-            <button id="submitBtn" style="flex: 2;">送出 AI 進行比對</button>
+            <button id="submitBtn" style="flex: 2;">送出雙引擎比對</button>
         </div>
         
-        <div id="loading">⏳ AI 正在仔細比對特徵中，請稍候...</div>
+        <div id="loading">⏳ OCR 測量與 AI 外觀比對中，請稍候...</div>
         
         <div id="result-box" style="display:none;">
-            <h4 style="margin-top: 0; color: #333;">比對結果：</h4>
             <div id="star-rating" class="stars"></div>
-            <p id="explanation-text" style="line-height: 1.5; color: #555;"></p>
+            <h3 id="geo-status-text" style="color: #dc3545; text-align: center; margin-top: 0; margin-bottom: 20px;"></h3>
+            
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 5px solid #007bff; margin-bottom: 15px;">
+                <h4 style="margin-top: 0; color: #007bff; display: flex; align-items: center;">
+                    <span style="font-size: 20px; margin-right: 8px;">📐</span> OCR 幾何運算報告
+                </h4>
+                <p id="geo-explanation-text" style="line-height: 1.6; color: #555; font-family: monospace; white-space: pre-line; margin-bottom: 0;"></p>
+            </div>
+
+            <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 5px solid #ffc107;">
+                <h4 style="margin-top: 0; color: #d39e00; display: flex; align-items: center;">
+                    <span style="font-size: 20px; margin-right: 8px;">👁️</span> AI 外觀特徵比對
+                </h4>
+                <p id="ai-explanation-text" style="line-height: 1.6; color: #664d03; margin-bottom: 0;"></p>
+            </div>
         </div>
+
         <button id="resetBtn" style="display:none; width: 100%; background: #28a745; margin-top: 15px;" onclick="location.reload()">開始新的一筆比對</button>
     </div>
 
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
         
-        // ★★★ 請將此處替換為你部署的 GAS Web App URL ★★★
+        // ★★★ 請替換為你最新的 GAS Web App URL ★★★
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbycbiOxbx9T4ynci32AWE46a-B42N_MaIQUBmwvsuzj3WiJ5_dHEL3Z_qw3cv8nkGZkAw/exec"; 
 
         let cropper1 = null, cropper2 = null;
         let finalImg1Data = null, finalImg2Data = null;
-        
-        // PDF 狀態管理
-        let pdfDoc1 = null, pdfPage1 = 1;
-        let pdfDoc2 = null, pdfPage2 = 1;
+        let pdfDoc1 = null, pdfPage1 = 1; let pdfDoc2 = null, pdfPage2 = 1;
 
         function updateProgress(step) {
             document.querySelectorAll('.progressbar li').forEach((li, index) => {
@@ -182,7 +190,6 @@
             updateProgress(toStep);
         }
 
-        // 渲染指定的 PDF 頁面
         async function renderPdfPage(pdfDoc, pageNum, imgElement, btnElement, stepNum) {
             const page = await pdfDoc.getPage(pageNum);
             const viewport = page.getViewport({ scale: 2.0 });
@@ -204,7 +211,6 @@
             };
             imgElement.src = canvas.toDataURL('image/jpeg');
             
-            // 更新 UI 控制面板
             document.getElementById(`page-info-${stepNum}`).innerText = `第 ${pageNum} 頁 / 共 ${pdfDoc.numPages} 頁`;
             document.getElementById(`prev-page-${stepNum}`).disabled = pageNum <= 1;
             document.getElementById(`next-page-${stepNum}`).disabled = pageNum >= pdfDoc.numPages;
@@ -213,7 +219,7 @@
         function processFile(file, imgElement, btnElement, stepNum, filenameDisplay) {
             if (!file) return;
             filenameDisplay.innerText = file.name;
-            document.getElementById(`pdf-controls-${stepNum}`).style.display = 'none'; // 預設隱藏 PDF 控制
+            document.getElementById(`pdf-controls-${stepNum}`).style.display = 'none';
 
             if (file.type === 'application/pdf') {
                 const fileReader = new FileReader();
@@ -221,7 +227,7 @@
                     try {
                         const typedarray = new Uint8Array(this.result);
                         const pdf = await pdfjsLib.getDocument(typedarray).promise;
-                        document.getElementById(`pdf-controls-${stepNum}`).style.display = 'flex'; // 顯示 PDF 控制
+                        document.getElementById(`pdf-controls-${stepNum}`).style.display = 'flex';
                         
                         if (stepNum === 1) {
                             pdfDoc1 = pdf; pdfPage1 = 1;
@@ -234,7 +240,6 @@
                 };
                 fileReader.readAsArrayBuffer(file);
             } else {
-                // 處理一般圖片
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     imgElement.onload = () => {
@@ -262,6 +267,7 @@
         
         document.getElementById('cropBtn1').addEventListener('click', () => {
             if (!cropper1) return;
+            // 回復為直接取得原始裁切圖片
             finalImg1Data = cropper1.getCroppedCanvas().toDataURL('image/jpeg');
             document.getElementById('preview1').src = finalImg1Data;
             switchStep(1, 2);
@@ -278,12 +284,13 @@
         
         document.getElementById('cropBtn2').addEventListener('click', () => {
             if (!cropper2) return;
+            // 回復為直接取得原始裁切圖片
             finalImg2Data = cropper2.getCroppedCanvas().toDataURL('image/jpeg');
             document.getElementById('preview2').src = finalImg2Data;
             switchStep(2, 3);
         });
 
-        // --- Step 3 事件 ---
+        // --- Step 3 事件 (雙引擎發送與渲染) ---
         document.getElementById('backBtn2').addEventListener('click', () => switchStep(3, 2));
 
         document.getElementById('submitBtn').addEventListener('click', async () => {
@@ -298,6 +305,7 @@
                     body: JSON.stringify({ img1: finalImg1Data, img2: finalImg2Data }),
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' }
                 });
+                
                 const result = await response.json();
                 
                 document.getElementById('loading').style.display = 'none';
@@ -306,8 +314,15 @@
                 document.querySelector('#indicator-step3').classList.remove('active');
                 document.querySelector('#indicator-step3').classList.add('completed');
                 
+                // 渲染雙面板資料
                 document.getElementById('star-rating').innerText = '★'.repeat(result.star) + '☆'.repeat(5 - result.star);
-                document.getElementById('explanation-text').innerText = result.explanation;
+                
+                document.getElementById('geo-status-text').innerText = result.geo_status;
+                document.getElementById('geo-status-text').style.color = result.star >= 4 ? '#28a745' : '#dc3545';
+                
+                document.getElementById('geo-explanation-text').innerText = result.geo_explanation;
+                document.getElementById('ai-explanation-text').innerText = result.ai_explanation;
+
             } catch (error) {
                 alert("比對發生錯誤：" + error);
                 document.getElementById('action-buttons').style.display = 'flex';
