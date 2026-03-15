@@ -5,130 +5,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>危險性機械及設備 AI鋼印比對工具</title>
     <style>
-        /* 基礎重置與背景設定 */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            box-sizing: border-box;
-        }
-
-        /* 標題區塊設計 */
-        .header-section {
-            text-align: center;
-            margin-top: 5vh;
-            margin-bottom: 40px;
-            width: 100%;
-            max-width: 500px;
-        }
-
-        .subtitle {
-            font-size: 1.1rem;
-            color: #6c757d;
-            font-weight: 600;
-            letter-spacing: 2px;
-            margin-bottom: 8px;
-            text-shadow: 1px 1px 1px rgba(255,255,255,0.8);
-        }
-
-        .main-title {
-            font-size: 2.2rem;
-            color: #2c3e50;
-            margin: 0;
-            font-weight: 800;
-            letter-spacing: 1px;
-        }
-
-        /* 讓 AI 兩個字呈現科技感 */
-        .main-title span {
-            color: #007bff;
-        }
-
-        /* 裝飾分隔線 */
-        .divider {
-            width: 50px;
-            height: 4px;
-            background: linear-gradient(90deg, #007bff, #17a2b8);
-            margin: 15px auto 0 auto;
-            border-radius: 2px;
-        }
-
-        /* 卡片選單區塊 */
-        .menu-container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            width: 100%;
-            max-width: 400px;
-        }
-
-        /* 選單卡片設計 */
-        .menu-card {
-            background: white;
-            padding: 25px 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            text-decoration: none;
-            color: inherit;
-            transition: transform 0.2s, box-shadow 0.2s;
-            text-align: left;
-            position: relative;
-            overflow: hidden;
-            border: 1px solid #eaeaea;
-        }
-
-        /* 點擊時的微動畫 */
-        .menu-card:active {
-            transform: scale(0.98);
-        }
-
-        /* 左側顏色條標識 */
-        .menu-card::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 6px;
-            background-color: #007bff;
-        }
-
-        .menu-card.manual::before {
-            background-color: #28a745;
-        }
-
-        .card-icon {
-            font-size: 32px;
-            margin-bottom: 10px;
-        }
-
-        .card-title {
-            margin: 0 0 8px 0;
-            font-size: 1.3rem;
-            color: #343a40;
-            font-weight: bold;
-        }
-
-        .card-desc {
-            margin: 0;
-            color: #6c757d;
-            font-size: 0.95rem;
-            line-height: 1.5;
+        /* 基礎排版 */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #f4f7f6; 
+            margin: 0; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh; 
+            box-sizing: border-box; 
+            overflow-x: hidden; 
         }
         
-        /* 底部版權/版本號 */
-        .footer {
-            margin-top: auto;
-            padding-top: 30px;
-            color: #adb5bd;
-            font-size: 0.85rem;
-            text-align: center;
+        /* 標題區塊 */
+        .header-section { text-align: center; margin-top: 3vh; margin-bottom: 30px; width: 100%; max-width: 500px; }
+        .subtitle { font-size: 1.1rem; color: #6c757d; font-weight: 600; letter-spacing: 2px; margin-bottom: 8px; }
+        .main-title { font-size: 2.2rem; color: #2c3e50; margin: 0; font-weight: 800; letter-spacing: 1px; }
+        .main-title span { color: #007bff; }
+        .divider { width: 50px; height: 4px; background: linear-gradient(90deg, #007bff, #17a2b8); margin: 15px auto 0 auto; border-radius: 2px; }
+        
+        /* 卡片選單 */
+        .menu-container { display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 400px; }
+        .menu-card { 
+            background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+            text-decoration: none; color: inherit; transition: transform 0.2s; 
+            text-align: left; position: relative; overflow: hidden; border: 1px solid #eaeaea; cursor: pointer; 
         }
+        .menu-card:active { transform: scale(0.98); }
+        .menu-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background-color: #007bff; }
+        .menu-card.manual::before { background-color: #28a745; }
+        .menu-card.history::before { background-color: #f39c12; }
+        .card-icon { font-size: 28px; margin-bottom: 8px; }
+        .card-title { margin: 0 0 5px 0; font-size: 1.2rem; color: #343a40; font-weight: bold; }
+        .card-desc { margin: 0; color: #6c757d; font-size: 0.9rem; line-height: 1.4; }
+        
+        .footer { margin-top: auto; padding-top: 30px; color: #adb5bd; font-size: 0.85rem; text-align: center; }
+
+        /* 歷史紀錄滑出視窗樣式 */
+        #historyPanel { 
+            position: fixed; top: 100%; left: 0; width: 100%; height: 100%; 
+            background: #f4f7f6; z-index: 100; 
+            transition: top 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
+            display: flex; flex-direction: column; 
+        }
+        #historyPanel.open { top: 0; }
+        
+        .history-header { background: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .history-header h2 { margin: 0; font-size: 1.2rem; color: #333; }
+        .close-history { font-size: 28px; font-weight: bold; color: #888; cursor: pointer; padding: 0 10px; }
+        
+        .history-content { flex-grow: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 15px; }
+        
+        .history-item { background: white; border-radius: 10px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative; }
+        .history-time { font-size: 0.8rem; color: #999; margin-bottom: 5px; }
+        .history-stars { color: #f39c12; font-size: 20px; font-weight: bold; letter-spacing: 2px; margin-bottom: 5px;}
+        .history-status { font-weight: bold; font-size: 0.95rem; margin-bottom: 10px; }
+        .status-pass { color: #28a745; }
+        .status-fail { color: #dc3545; }
+        .history-ai { font-size: 0.85rem; color: #664d03; background: #fff3cd; padding: 8px; border-radius: 5px; margin-bottom: 10px; }
+        .history-images { display: flex; gap: 10px; }
+        .history-images img { width: 60px; height: 60px; object-fit: contain; border: 1px solid #ddd; border-radius: 4px; background: #fff; }
+        
+        .clear-btn { background: #dc3545; color: white; border: none; padding: 10px; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .empty-state { text-align: center; color: #aaa; margin-top: 50px; font-size: 1.1rem; }
     </style>
 </head>
 <body>
@@ -140,25 +81,97 @@
     </div>
 
     <div class="menu-container">
-        
         <a href="ai_assist.html" class="menu-card">
             <div class="card-icon">🤖</div>
             <h2 class="card-title">雙引擎 AI 自動比對</h2>
-            <p class="card-desc">上傳拓印與實體照片，由系統自動計算幾何最大誤差，並進行微觀特徵交叉比對。</p>
+            <p class="card-desc">由系統自動計算幾何最大誤差，並進行微觀特徵交叉比對，包含手動疊影覆核。</p>
         </a>
 
         <a href="manual.html" class="menu-card manual">
             <div class="card-icon">🖐️</div>
             <h2 class="card-title">人工疊影輔助判斷</h2>
-            <p class="card-desc">開啟相機並重疊半透明拓印圖層，支援全螢幕雙指縮放與拖曳，適用於極端模糊案例。</p>
+            <p class="card-desc">開啟相機並重疊半透明拓印，支援全螢幕拖曳、縮放與旋轉，適用極端案例。</p>
         </a>
-
+        
+        <div class="menu-card history" onclick="openHistory()">
+            <div class="card-icon">📜</div>
+            <h2 class="card-title">本機檢驗紀錄 (歷史回顧)</h2>
+            <p class="card-desc">查閱您近期在本設備上進行過的 AI 檢驗結果與縮圖紀錄。</p>
+        </div>
     </div>
 
-    <div class="footer">
-        中華產業機械設備協會 © 2026<br>
-        System Version 5.0 (雙引擎建檔版)
+    <div class="footer">中華產業機械設備協會 © 2026<br>System Version 6.0 (本機紀錄版)</div>
+
+    <div id="historyPanel">
+        <div class="history-header">
+            <h2>📜 近期檢驗紀錄</h2>
+            <div class="close-history" onclick="closeHistory()">&times;</div>
+        </div>
+        <div class="history-content" id="historyList">
+            </div>
     </div>
 
+    <script>
+        const historyPanel = document.getElementById('historyPanel');
+        const historyList = document.getElementById('historyList');
+
+        function openHistory() {
+            renderHistory();
+            historyPanel.classList.add('open');
+            history.pushState({ panelOpen: true }, "", "");
+        }
+
+        function closeHistory(fromPopState = false) {
+            historyPanel.classList.remove('open');
+            if (!fromPopState) { 
+                history.back(); 
+            }
+        }
+
+        window.addEventListener("popstate", function() {
+            if (historyPanel.classList.contains('open')) { 
+                closeHistory(true); 
+            }
+        });
+
+        function renderHistory() {
+            const dataStr = localStorage.getItem('stamp_history');
+            if (!dataStr || dataStr === '[]') {
+                historyList.innerHTML = '<div class="empty-state">目前手機內無任何檢驗紀錄。</div>';
+                return;
+            }
+
+            const data = JSON.parse(dataStr);
+            let html = '';
+            
+            data.forEach(item => {
+                const statusClass = item.star >= 4 ? 'status-pass' : 'status-fail';
+                const starsHtml = '★'.repeat(item.star) + '☆'.repeat(5 - item.star);
+                
+                html += `
+                    <div class="history-item">
+                        <div class="history-time">${item.time}</div>
+                        <div class="history-stars">${starsHtml}</div>
+                        <div class="history-status ${statusClass}">${item.geo_status}</div>
+                        ${item.ai_explanation ? `<div class="history-ai">👁️ ${item.ai_explanation}</div>` : ''}
+                        <div class="history-images">
+                            <img src="${item.thumb1}" alt="拓印">
+                            <img src="${item.thumb2}" alt="實體">
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `<button class="clear-btn" onclick="clearHistory()">🗑️ 清空本機所有紀錄</button>`;
+            historyList.innerHTML = html;
+        }
+
+        function clearHistory() {
+            if (confirm("確定要刪除手機內的所有檢驗紀錄嗎？(後台雲端檔案不會受影響)")) {
+                localStorage.removeItem('stamp_history');
+                renderHistory();
+            }
+        }
+    </script>
 </body>
 </html>
