@@ -8,7 +8,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <style>
-        body { font-family: sans-serif; margin: 0; padding: 15px; background: #f9f9f9; text-align: center; }
+        body { font-family: sans-serif; margin: 0; padding: 15px; background: #f9f9f9; text-align: center; overflow-x: hidden; }
         .progress-container { width: 100%; max-width: 400px; margin: 20px auto 30px auto; }
         .progressbar { counter-reset: step; padding: 0; display: flex; justify-content: space-between; list-style: none; position: relative; margin: 0; z-index: 1; }
         .progressbar li { list-style-type: none; width: 33.33%; position: relative; text-align: center; font-weight: bold; color: #aaa; font-size: 14px; }
@@ -37,44 +37,36 @@
         .pdf-controls { display: none; justify-content: center; align-items: center; gap: 15px; margin-top: 10px; background: #f1f3f5; padding: 10px; border-radius: 5px; }
         .pdf-controls button { margin: 0; padding: 6px 12px; font-size: 14px; background: #495057; }
         .pdf-controls button:disabled { background: #ced4da; cursor: not-allowed; box-shadow: none; }
-        .preview-box { width: 120px; height: 120px; border: 1px solid #ccc; margin: 10px auto; object-fit: contain; background: white; border-radius: 4px; }
+        .preview-box { width: 120px; height: 120px; border: 1px solid #ccc; margin: 10px auto; object-fit: contain; background: white; border-radius: 4px; cursor: pointer; transition: transform 0.2s; }
+        .preview-box:active { transform: scale(0.95); } /* 增加點擊反饋 */
         #result-box { margin-top: 20px; padding: 15px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: left; }
         .stars { color: #f39c12; font-size: 36px; font-weight: bold; margin: 10px 0; text-align: center; }
         #loading { display: none; color: #007bff; font-weight: bold; margin-top: 20px; font-size: 16px; }
 
-        /* --- 新增：懸浮按鈕 (FAB) 樣式 --- */
-        .fab {
-            position: fixed; bottom: 25px; right: 25px;
-            width: 55px; height: 55px; border-radius: 50%;
-            background-color: #17a2b8; color: white;
-            font-size: 26px; border: none;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            cursor: pointer; z-index: 1000;
-            display: flex; justify-content: center; align-items: center;
-            transition: transform 0.2s, background-color 0.2s;
-            padding: 0; /* 修正圖示偏移 */
-        }
+        /* 懸浮按鈕 (FAB) 樣式 */
+        .fab { position: fixed; bottom: 25px; right: 25px; width: 55px; height: 55px; border-radius: 50%; background-color: #17a2b8; color: white; font-size: 26px; border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; z-index: 999; display: flex; justify-content: center; align-items: center; transition: transform 0.2s, background-color 0.2s; padding: 0; }
         .fab:active { transform: scale(0.9); background-color: #138496; }
 
-        /* --- 新增：彈出視窗 (Modal) 樣式 --- */
-        .modal {
-            display: none; position: fixed; z-index: 1001;
-            left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.6);
-            backdrop-filter: blur(2px); /* 背景模糊效果 */
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: 20vh auto; padding: 25px;
-            border-radius: 12px; width: 85%; max-width: 400px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            position: relative; line-height: 1.6; text-align: left;
-        }
-        .close-modal {
-            position: absolute; right: 15px; top: 10px;
-            color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer;
-        }
+        /* 通用彈出視窗 (Modal) 樣式 */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
+        .modal-content { background-color: #fefefe; margin: 20vh auto; padding: 25px; border-radius: 12px; width: 85%; max-width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; line-height: 1.6; text-align: left; }
+        .close-modal { position: absolute; right: 15px; top: 10px; color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
         .close-modal:hover, .close-modal:active { color: #333; }
+
+        /* --- 新增：人手動疊影比對視窗 (CheckModal) 樣式 --- */
+        #checkModal { display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100vw; height: 100vh; background-color: #222; overflow: hidden; touch-action: none; /* 防止原生手勢干擾 */ }
+        #check-container { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+        
+        /* 底圖（固定不動） */
+        .check-base { max-width: 90vw; max-height: 80vh; object-fit: contain; pointer-events: none; user-select: none; z-index: 1; border: 2px solid #555; }
+        
+        /* 疊圖（支援手勢） */
+        .check-overlay { position: absolute; top: 50%; left: 50%; /* 初始居中 */ max-width: 90vw; max-height: 80vh; object-fit: contain; opacity: 0.5; z-index: 2; /* 確保從中心點旋轉/縮放 */ transform-origin: center center; transform: translate(-50%, -50%) scale(1) rotate(0deg); pointer-events: none; /* 事件穿透給容器 */ border: 2px dashed rgba(255, 255, 255, 0.6); }
+        
+        #check-controls { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0, 0, 0, 0.8); padding: 15px; box-sizing: border-box; z-index: 10; display: flex; flex-direction: column; gap: 10px; }
+        .check-control-group { display: flex; align-items: center; justify-content: space-between; color: white; }
+        .check-control-group label { width: 60px; font-size: 14px; }
+        .check-control-group input[type="range"] { flex-grow: 1; margin: 0 10px; }
     </style>
 </head>
 <body>
@@ -110,16 +102,22 @@
         </div>
     </div>
     
-    <div id="step3" class="step-container"><h3 style="margin-top:0;">步驟 3：確認影像並送出</h3>
+    <div id="step3" class="step-container">
+        <h3 style="margin-top:0;">步驟 3：確認影像並送出</h3>
         <div style="display: flex; justify-content: space-around; align-items: center;">
-            <div><p style="margin-bottom: 5px; color: #555; font-weight: bold;">拓印範圍</p><img id="preview1" class="preview-box"></div>
+            <div title="點擊進行人工疊影比對"><p style="margin-bottom: 5px; color: #555; font-weight: bold;">拓印範圍</p><img id="preview1" class="preview-box"></div>
             <div style="font-size: 24px; color: #aaa;">VS</div>
-            <div><p style="margin-bottom: 5px; color: #555; font-weight: bold;">實體範圍</p><img id="preview2" class="preview-box"></div>
+            <div title="點擊進行人工疊影比對"><p style="margin-bottom: 5px; color: #555; font-weight: bold;">實體範圍</p><img id="preview2" class="preview-box"></div>
         </div>
+        <div style="font-size: 12px; color: #888; margin-top: 5px;">(比對完成後，可點擊上方照片進行手動疊影覆核)</div>
+
         <div style="display: flex; margin-top: 20px; gap: 10px;" id="action-buttons">
             <button id="backBtn2" class="btn-secondary" style="flex: 1;">回上一步</button>
-            <button id="submitBtn" style="flex: 2;">送出 AI 進行比對</button> </div>
-        <div id="loading">⏳ OCR 測量與 AI 判讀中，請稍候...</div> <div id="result-box" style="display:none;">
+            <button id="submitBtn" style="flex: 2;">送出 AI 進行比對</button>
+        </div>
+        <div id="loading">⏳ OCR 測量與 AI 判讀中，請稍候...</div>
+        
+        <div id="result-box" style="display:none;">
             <div id="star-rating" class="stars"></div>
             <h3 id="geo-status-text" style="color: #dc3545; text-align: center; margin-top: 0; margin-bottom: 20px;"></h3>
             <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 5px solid #007bff; margin-bottom: 15px;">
@@ -138,19 +136,28 @@
 
     <div id="infoModal" class="modal">
         <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <h3 style="margin-top:0; color:#007bff; display: flex; align-items: center;">
-                <span style="font-size: 24px; margin-right: 8px;">📸</span> 拍照與角度說明
-            </h3>
-            <p style="color: #444;">
-                <strong style="color: #d35400;">❓ 為什麼有時需要按「↻ 旋轉 90°」？</strong><br>
-                在狹窄空間拍照時，若照片呈現「直立（垂直）」，AI 將無法進行由左至右的字元配對。遇到此情況，請點擊旋轉按鈕將鋼印轉為「橫向」後再裁切。
-            </p>
+            <span class="close-modal" id="closeInfo">&times;</span>
+            <h3 style="margin-top:0; color:#007bff; display: flex; align-items: center;"><span style="font-size: 24px; margin-right: 8px;">📸</span> 拍照與角度說明</h3>
+            <p style="color: #444; font-size: 14px;"><strong>❓ 為什麼有時需要按「↻ 旋轉 90°」？</strong><br>在狹窄空間拍照時，若照片呈現「直立（垂直）」，AI 將無法進行由左至右的字元配對。遇到此情況，請點擊旋轉按鈕將鋼印轉為「橫向」後再裁切。</p>
             <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
-            <p style="color: #444;">
-                <strong style="color: #28a745;">📐 拍照歪斜會影響精準度嗎？</strong><br>
-                <b>完全不會！</b> 只要字體清晰且整體呈現橫向，即使相機傾斜 10°～20°，系統強大的幾何引擎皆會自動抓出基準線並「拉平校正」。您不需強求完美水平，請安心拍攝！
-            </p>
+            <p style="color: #444; font-size: 14px;"><strong>📐 拍照歪斜會影響精準度嗎？</strong><br><b>完全不會！</b> 只要字體清晰且整體呈現橫向，即使相機傾斜 10°～20°，系統強大的幾何引擎皆會自動抓出基準線並「拉平校正」。您不需強求完美水平。</p>
+        </div>
+    </div>
+
+    <div id="checkModal">
+        <div id="check-container">
+            <img id="checkBaseImg" class="check-base" src="">
+            <img id="checkOverlayImg" class="check-overlay" src="">
+        </div>
+        
+        <div id="check-controls">
+            <div class="check-control-group">
+                <label>透明度:</label>
+                <input type="range" id="checkOpacitySlider" min="0.1" max="1" step="0.05" value="0.5">
+                <span id="checkOpacityVal">50%</span>
+            </div>
+            <div style="font-size: 12px; color: #aaa; text-align: center;">(單指拖曳位置，雙指縮放與旋轉)</div>
+            <button id="closeCheckBtn" class="btn-secondary" style="margin-top: 5px; width: 100%;">× 關閉覆核視窗</button>
         </div>
     </div>
 
@@ -163,24 +170,193 @@
         let cropper1 = null, cropper2 = null;
         let finalImg1Data = null, finalImg2Data = null;
         let pdfDoc1 = null, pdfPage1 = 1; let pdfDoc2 = null, pdfPage2 = 1;
+        let canOpenCheck = false; // 是否允許開啟覆核
 
-        // --- Modal 控制邏輯 ---
-        const modal = document.getElementById("infoModal");
-        const fab = document.getElementById("infoFab");
-        const span = document.getElementsByClassName("close-modal")[0];
+        // --- 說明 Modal 控制 ---
+        const infoModal = document.getElementById("infoModal");
+        const infoFab = document.getElementById("infoFab");
+        const closeInfo = document.getElementById("closeInfo");
+        infoFab.onclick = function() { infoModal.style.display = "block"; }
+        closeInfo.onclick = function() { infoModal.style.display = "none"; }
+        window.addEventListener('click', function(event) { if (event.target == infoModal) { infoModal.style.display = "none"; } });
 
-        fab.onclick = function() { modal.style.display = "block"; }
-        span.onclick = function() { modal.style.display = "none"; }
-        window.onclick = function(event) { if (event.target == modal) { modal.style.display = "none"; } }
-        // ----------------------
+        // --- 核心邏輯：手勢幾何運算 (單指拖曳、雙指縮放、雙指旋轉) ---
+        const checkOverlayImg = document.getElementById('checkOverlayImg');
+        const checkContainer = document.getElementById('check-container');
+        
+        let isDragging = false;
+        let startX, startY;
+        let currentX = 0, currentY = 0; // translate px
+        let xOffset = 0, yOffset = 0;
+        let currentScale = 1; // scale
+        let currentRotation = 0; // rotate degrees
+        
+        // 雙指手勢專用變數
+        let initialPinchDistance = null;
+        let initialPinchScale = 1;
+        let initialTouchAngle = null;
+        let initialElementRotation = 0;
 
+        // 更新 CSS Transform 矩陣 (注意：translate 必須在 scale/rotate 之前)
+        function updateOverlayTransform() {
+            checkOverlayImg.style.transform = `translate(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px)) scale(${currentScale}) rotate(${currentRotation}deg)`;
+        }
+
+        // 計算兩點間距離
+        function getDistance(touches) {
+            return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
+        }
+
+        // 計算兩點連線角度 (弧度)
+        function getAngle(touches) {
+            const dx = touches[0].clientX - touches[1].clientX;
+            const dy = touches[0].clientY - touches[1].clientY;
+            return Math.atan2(dy, dx); // 回傳弧度 -PI 到 PI
+        }
+
+        // 弧度轉角度
+        function radToDeg(rad) { return rad * (180 / Math.PI); }
+
+        // 監聽整個容器的觸控事件
+        checkContainer.addEventListener("touchstart", function(e) {
+            if (!overlayImageLoaded) return; // 沒圖片不執行
+
+            if (e.touches.length === 1) {
+                // 單指：開始拖曳
+                isDragging = true;
+                startX = e.touches[0].clientX - xOffset;
+                startY = e.touches[0].clientY - yOffset;
+            } else if (e.touches.length === 2) {
+                // 雙指：開始縮放與旋轉
+                isDragging = false; // 暫停拖曳
+                
+                // 紀錄初始縮放狀態
+                initialPinchDistance = getDistance(e.touches);
+                initialPinchScale = currentScale;
+                
+                // 紀錄初始旋轉狀態
+                initialTouchAngle = getAngle(e.touches);
+                initialElementRotation = currentRotation;
+            }
+        }, { passive: false });
+
+        checkContainer.addEventListener("touchmove", function(e) {
+            if (!overlayImageLoaded) return;
+            e.preventDefault(); // 絕對重要：防止手機頁面滾動
+
+            if (e.touches.length === 1 && isDragging) {
+                // 單指拖曳中
+                currentX = e.touches[0].clientX - startX;
+                currentY = e.touches[0].clientY - startY;
+                xOffset = currentX;
+                yOffset = currentY;
+                updateOverlayTransform();
+                
+            } else if (e.touches.length === 2 && initialPinchDistance !== null) {
+                // 雙指手勢中：同時計算縮放與旋轉
+
+                // 1. 計算縮放
+                const currentDistance = getDistance(e.touches);
+                const scaleDelta = currentDistance / initialPinchDistance;
+                currentScale = Math.min(Math.max(0.1, initialPinchScale * scaleDelta), 5); // 限制 0.1~5倍
+                
+                // 2. 計算旋轉
+                const currentTouchAngle = getAngle(e.touches);
+                const angleDeltaRad = currentTouchAngle - initialTouchAngle;
+                currentRotation = initialElementRotation + radToDeg(angleDeltaRad);
+                
+                updateOverlayTransform();
+            }
+        }, { passive: false });
+
+        cameraContainer.addEventListener("touchend", function(e) {
+            // 重置雙指變數
+            if (e.touches.length < 2) {
+                initialPinchDistance = null;
+                initialTouchAngle = null;
+            }
+            
+            // 如果放開一根剩單指，無縫切換回拖曳模式
+            if (e.touches.length === 1) {
+                isDragging = true;
+                startX = e.touches[0].clientX - xOffset;
+                startY = e.touches[0].clientY - yOffset;
+            } else if (e.touches.length === 0) {
+                isDragging = false;
+            }
+        }, { passive: false });
+
+        cameraContainer.addEventListener("touchcancel", function(e) { isDragging = false; initialPinchDistance = null; initialTouchAngle = null; }, { passive: false });
+
+
+        // --- 人工覆核視窗 (CheckModal) 控制邏輯 ---
+        const checkModal = document.getElementById('checkModal');
+        const checkBaseImg = document.getElementById('checkBaseImg');
+        const checkOpacitySlider = document.getElementById('checkOpacitySlider');
+        const checkOpacityVal = document.getElementById('checkOpacityVal');
+        const closeCheckBtn = document.getElementById('closeCheckBtn');
+        let overlayImageLoaded = false;
+
+        function resetCheckGeometry() {
+            // 重置所有幾何變數到初始狀態
+            currentX = 0; currentY = 0; xOffset = 0; yOffset = 0;
+            currentScale = 1; currentRotation = 0;
+            checkOpacitySlider.value = 0.5;
+            checkOpacityVal.innerText = "50%";
+            checkOverlayImg.style.opacity = 0.5;
+            updateOverlayTransform();
+        }
+
+        // 開啟覆核視窗 (clickedImgId: 點擊的是 preview1 還是 preview2)
+        function openCheckModal(clickedImgId) {
+            if (!canOpenCheck || !finalImg1Data || !finalImg2Data) return;
+            
+            infoFab.style.display = 'none'; // 隱藏💡按鈕
+            overlayImageLoaded = false;
+            resetCheckGeometry();
+
+            // 根據點擊，設定底圖與疊圖
+            if (clickedImgId === 'preview1') {
+                // 點擊拓印 -> 拓印為底，實體為疊
+                checkBaseImg.src = finalImg1Data;
+                checkOverlayImg.src = finalImg2Data;
+            } else {
+                // 點擊實體 -> 實體為底，拓印為疊
+                checkBaseImg.src = finalImg2Data;
+                checkOverlayImg.src = finalImg1Data;
+            }
+
+            checkOverlayImg.onload = () => { overlayImageLoaded = true; };
+            checkModal.style.display = 'block';
+            document.body.style.overflow = 'hidden'; // 鎖定網頁滾動
+        }
+
+        function closeCheckModal() {
+            checkModal.style.display = 'none';
+            infoFab.style.display = 'flex';
+            document.body.style.overflow = ''; // 恢復網頁滾動
+            // 清空圖片節省記憶體
+            checkBaseImg.src = ''; checkOverlayImg.src = ''; overlayImageLoaded = false;
+        }
+
+        // 綁定 preview 點擊事件
+        document.getElementById('preview1').addEventListener('click', () => openCheckModal('preview1'));
+        document.getElementById('preview2').addEventListener('click', () => openCheckModal('preview2'));
+        
+        // 綁定關閉事件
+        closeCheckBtn.addEventListener('click', closeCheckModal);
+
+        // 透明度滑桿
+        checkOpacitySlider.addEventListener('input', function() {
+            checkOverlayImg.style.opacity = this.value;
+            checkOpacityVal.innerText = Math.round(this.value * 100) + '%';
+        });
+
+
+        // --- 原有流程邏輯 ---
         function updateProgress(step) { document.querySelectorAll('.progressbar li').forEach((li, index) => { li.className = ''; if (index + 1 < step) li.classList.add('completed'); else if (index + 1 === step) li.classList.add('active'); }); }
         function switchStep(fromStep, toStep) { document.getElementById(`step${fromStep}`).classList.remove('active-step'); document.getElementById(`step${toStep}`).classList.add('active-step'); updateProgress(toStep); }
-
-        function showButtons(stepNum) {
-            document.getElementById(`cropBtn${stepNum}`).style.display = 'inline-block';
-            document.getElementById(`rotateBtn${stepNum}`).style.display = 'inline-block';
-        }
+        function showButtons(stepNum) { document.getElementById(`cropBtn${stepNum}`).style.display = 'inline-block'; document.getElementById(`rotateBtn${stepNum}`).style.display = 'inline-block'; }
 
         async function renderPdfPage(pdfDoc, pageNum, imgElement, stepNum) {
             const page = await pdfDoc.getPage(pageNum); const viewport = page.getViewport({ scale: 2.0 });
@@ -206,7 +382,7 @@
                     try { const typedarray = new Uint8Array(this.result); const pdf = await pdfjsLib.getDocument(typedarray).promise; document.getElementById(`pdf-controls-${stepNum}`).style.display = 'flex';
                         if (stepNum === 1) { pdfDoc1 = pdf; pdfPage1 = 1; renderPdfPage(pdfDoc1, pdfPage1, imgElement, 1); } 
                         else { pdfDoc2 = pdf; pdfPage2 = 1; renderPdfPage(pdfDoc2, pdfPage2, imgElement, 2); }
-                    } catch (error) { alert("PDF 讀取失敗，請確認檔案。"); }
+                    } catch (error) { alert("PDF 讀取失敗。"); }
                 }; fileReader.readAsArrayBuffer(file);
             } else {
                 const reader = new FileReader();
@@ -220,6 +396,7 @@
             }
         }
 
+        // 綁定事件
         document.getElementById('file1').addEventListener('change', function(e) { processFile(e.target.files[0], document.getElementById('image1'), 1, document.getElementById('filename1')); });
         document.getElementById('prev-page-1').addEventListener('click', () => { if(pdfPage1 > 1) { pdfPage1--; renderPdfPage(pdfDoc1, pdfPage1, document.getElementById('image1'), 1); }});
         document.getElementById('next-page-1').addEventListener('click', () => { if(pdfPage1 < pdfDoc1.numPages) { pdfPage1++; renderPdfPage(pdfDoc1, pdfPage1, document.getElementById('image1'), 1); }});
@@ -234,6 +411,7 @@
         document.getElementById('cropBtn2').addEventListener('click', () => { if (!cropper2) return; finalImg2Data = cropper2.getCroppedCanvas().toDataURL('image/jpeg'); document.getElementById('preview2').src = finalImg2Data; switchStep(2, 3); });
         document.getElementById('backBtn2').addEventListener('click', () => switchStep(3, 2));
 
+        // 送出比對
         document.getElementById('submitBtn').addEventListener('click', async () => {
             if (!GAS_API_URL.startsWith("http")) { alert("請先填入 GAS_API_URL"); return; }
             document.getElementById('action-buttons').style.display = 'none'; document.getElementById('loading').style.display = 'block';
@@ -245,7 +423,9 @@
                 document.getElementById('loading').style.display = 'none'; document.getElementById('result-box').style.display = 'block'; document.getElementById('resetBtn').style.display = 'block';
                 document.querySelector('#indicator-step3').classList.remove('active'); document.querySelector('#indicator-step3').classList.add('completed');
                 
-                // 移除了 result.seq_id 的前端顯示邏輯，但後台仍會儲存
+                // 比對完成，允許開啟人工覆核
+                canOpenCheck = true;
+                
                 document.getElementById('star-rating').innerText = '★'.repeat(result.star) + '☆'.repeat(5 - result.star);
                 document.getElementById('geo-status-text').innerText = result.geo_status;
                 document.getElementById('geo-status-text').style.color = result.star >= 4 ? '#28a745' : '#dc3545';
