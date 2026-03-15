@@ -9,6 +9,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <style>
         body { font-family: sans-serif; margin: 0; padding: 15px; background: #f9f9f9; text-align: center; overflow-x: hidden; }
+        
+        /* 進度條樣式 */
         .progress-container { width: 100%; max-width: 400px; margin: 20px auto 30px auto; }
         .progressbar { counter-reset: step; padding: 0; display: flex; justify-content: space-between; list-style: none; position: relative; margin: 0; z-index: 1; }
         .progressbar li { list-style-type: none; width: 33.33%; position: relative; text-align: center; font-weight: bold; color: #aaa; font-size: 14px; }
@@ -20,63 +22,92 @@
         .progressbar li.completed { color: #28a745; }
         .progressbar li.completed:before { content: '✓'; border-color: #28a745; background-color: #28a745; color: white; }
         .progressbar li.completed + li:after { background: #28a745; }
+        
+        /* 區塊樣式 */
         .step-container { display: none; margin-top: 10px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .active-step { display: block; animation: fadeIn 0.4s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
         .img-container { width: 100%; height: 45vh; margin-top: 15px; background: #ddd; overflow: hidden; border-radius: 4px; }
         .img-container img { display: block; max-width: 100%; } 
+        
+        /* 按鈕樣式 */
         button { padding: 12px 15px; margin-top: 15px; font-size: 15px; font-weight: bold; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: background 0.2s; }
         button:active { background: #0056b3; }
         .btn-secondary { background: #6c757d; }
         .btn-secondary:active { background: #5a6268; }
         .btn-action { display: flex; gap: 10px; margin-top: 15px; } 
+        
+        /* 上傳檔案按鈕 */
         input[type="file"] { display: none; }
         .custom-file-upload { display: inline-block; padding: 12px 24px; cursor: pointer; background-color: #17a2b8; color: white; border-radius: 5px; font-size: 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: background 0.2s; margin-bottom: 5px; width: 80%; max-width: 250px; }
         .custom-file-upload:active { background-color: #138496; }
         .file-name-display { font-size: 13px; color: #666; margin-bottom: 10px; word-break: break-all; min-height: 15px; }
+        
+        /* PDF 控制列 */
         .pdf-controls { display: none; justify-content: center; align-items: center; gap: 15px; margin-top: 10px; background: #f1f3f5; padding: 10px; border-radius: 5px; }
         .pdf-controls button { margin: 0; padding: 6px 12px; font-size: 14px; background: #495057; }
-        .pdf-controls button:disabled { background: #ced4da; cursor: not-allowed; box-shadow: none; }
+        
+        /* 預覽圖與結果報告 */
         .preview-box { width: 120px; height: 120px; border: 1px solid #ccc; margin: 10px auto; object-fit: contain; background: white; border-radius: 4px; cursor: pointer; transition: transform 0.2s; }
         .preview-box:active { transform: scale(0.95); } 
         #result-box { margin-top: 20px; padding: 15px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: left; }
         .stars { color: #f39c12; font-size: 36px; font-weight: bold; margin: 10px 0; text-align: center; }
         #loading { display: none; color: #007bff; font-weight: bold; margin-top: 20px; font-size: 16px; }
-
-        /* 懸浮按鈕 (FAB) 樣式 */
-        .fab { position: fixed; bottom: 25px; right: 25px; width: 55px; height: 55px; border-radius: 50%; background-color: #17a2b8; color: white; font-size: 26px; border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; z-index: 999; display: flex; justify-content: center; align-items: center; transition: transform 0.2s, background-color 0.2s; padding: 0; }
+        
+        /* 懸浮按鈕 (FAB) */
+        .fab { position: fixed; bottom: 25px; right: 25px; width: 55px; height: 55px; border-radius: 50%; background-color: #17a2b8; color: white; font-size: 26px; border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; z-index: 999; display: flex; justify-content: center; align-items: center; }
         .fab:active { transform: scale(0.9); background-color: #138496; }
-
-        /* 通用彈出視窗 (Modal) 樣式 */
+        
+        /* 說明視窗 (Modal) */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
         .modal-content { background-color: #fefefe; margin: 20vh auto; padding: 25px; border-radius: 12px; width: 85%; max-width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; line-height: 1.6; text-align: left; }
         .close-modal { position: absolute; right: 15px; top: 10px; color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
-        .close-modal:hover, .close-modal:active { color: #333; }
 
-        /* 人手動疊影比對視窗 (CheckModal) 樣式 */
+        /* 人工手動疊影比對視窗 (CheckModal) */
         #checkModal { display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100vw; height: 100vh; background-color: #222; overflow: hidden; touch-action: none; }
         #check-container { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; overflow: hidden; }
         .check-base { max-width: 90vw; max-height: 80vh; object-fit: contain; pointer-events: none; user-select: none; z-index: 1; border: 2px solid #555; }
         .check-overlay { position: absolute; top: 50%; left: 50%; max-width: 90vw; max-height: 80vh; object-fit: contain; opacity: 0.5; z-index: 2; transform-origin: center center; transform: translate(-50%, -50%) scale(1) rotate(0deg); pointer-events: none; border: 2px dashed rgba(255, 255, 255, 0.6); }
+        
         #check-controls { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0, 0, 0, 0.8); padding: 15px; box-sizing: border-box; z-index: 10; display: flex; flex-direction: column; gap: 10px; }
         .check-control-group { display: flex; align-items: center; justify-content: space-between; color: white; }
         .check-control-group label { width: 60px; font-size: 14px; }
         .check-control-group input[type="range"] { flex-grow: 1; margin: 0 10px; }
+        
+        /* 疊影視窗右上角關閉按鈕 */
+        #topCloseCheckBtn { position: absolute; top: 15px; right: 15px; width: 40px; height: 40px; background: rgba(255,255,255,0.2); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; z-index: 20; border: 1px solid rgba(255,255,255,0.4); cursor: pointer; }
+        #topCloseCheckBtn:active { background: rgba(255,255,255,0.4); transform: scale(0.9); }
     </style>
 </head>
 <body>
 
     <h2 style="color: #2c3e50; margin-bottom: 5px;">AI 鋼印比對系統</h2>
 
-    <div class="progress-container"><ul class="progressbar"><li class="active" id="indicator-step1">拓印設定</li><li id="indicator-step2">實體設定</li><li id="indicator-step3">AI 比對</li></ul></div>
+    <div class="progress-container">
+        <ul class="progressbar">
+            <li class="active" id="indicator-step1">拓印設定</li>
+            <li id="indicator-step2">實體設定</li>
+            <li id="indicator-step3">AI 比對</li>
+        </ul>
+    </div>
 
     <div id="step1" class="step-container active-step">
         <h3 style="margin-top:0;">步驟 1：取得拓印影像</h3>
         <label for="file1" class="custom-file-upload">📁 選擇檔案或拍照</label>
         <input type="file" id="file1" accept="image/*, application/pdf">
         <div id="filename1" class="file-name-display">尚未選擇任何檔案</div>
-        <div id="pdf-controls-1" class="pdf-controls"><button id="prev-page-1">上一頁</button><span id="page-info-1">第 1 頁</span><button id="next-page-1">下一頁</button></div>
-        <div class="img-container"><img id="image1" src=""></div>
+        
+        <div id="pdf-controls-1" class="pdf-controls">
+            <button id="prev-page-1">上一頁</button>
+            <span id="page-info-1">第 1 頁</span>
+            <button id="next-page-1">下一頁</button>
+        </div>
+        
+        <div class="img-container">
+            <img id="image1" src="">
+        </div>
+        
         <div class="btn-action">
             <button id="rotateBtn1" class="btn-secondary" style="display:none; flex: 1;">↻ 旋轉 90°</button>
             <button id="cropBtn1" style="display:none; flex: 2;">下一步：確認拓印</button>
@@ -84,12 +115,21 @@
     </div>
     
     <div id="step2" class="step-container">
-        <h3 style="margin-top:0;">步驟 2：取得實體鋼印影像</h3>
+        <h3 style="margin-top:0;">步驟 2：取得實體影像</h3>
         <label for="file2" class="custom-file-upload">📷 選擇檔案或拍照</label>
         <input type="file" id="file2" accept="image/*, application/pdf">
         <div id="filename2" class="file-name-display">尚未選擇任何檔案</div>
-        <div id="pdf-controls-2" class="pdf-controls"><button id="prev-page-2">上一頁</button><span id="page-info-2">第 1 頁</span><button id="next-page-2">下一頁</button></div>
-        <div class="img-container"><img id="image2" src=""></div>
+        
+        <div id="pdf-controls-2" class="pdf-controls">
+            <button id="prev-page-2">上一頁</button>
+            <span id="page-info-2">第 1 頁</span>
+            <button id="next-page-2">下一頁</button>
+        </div>
+        
+        <div class="img-container">
+            <img id="image2" src="">
+        </div>
+        
         <div class="btn-action">
             <button id="backBtn1" class="btn-secondary" style="flex: 1; padding: 12px 5px;">回上一步</button>
             <button id="rotateBtn2" class="btn-secondary" style="display:none; flex: 1.2; padding: 12px 5px;">↻ 旋轉 90°</button>
@@ -99,47 +139,63 @@
     
     <div id="step3" class="step-container">
         <h3 style="margin-top:0;">步驟 3：確認影像並送出</h3>
+        
         <div style="display: flex; justify-content: space-around; align-items: center;">
-            <div title="點擊進行人工疊影比對"><p style="margin-bottom: 5px; color: #555; font-weight: bold;">拓印範圍</p><img id="preview1" class="preview-box"></div>
+            <div title="點擊進行人工疊影比對">
+                <p style="margin-bottom: 5px; color: #555; font-weight: bold;">拓印範圍</p>
+                <img id="preview1" class="preview-box">
+            </div>
             <div style="font-size: 24px; color: #aaa;">VS</div>
-            <div title="點擊進行人工疊影比對"><p style="margin-bottom: 5px; color: #555; font-weight: bold;">實體範圍</p><img id="preview2" class="preview-box"></div>
+            <div title="點擊進行人工疊影比對">
+                <p style="margin-bottom: 5px; color: #555; font-weight: bold;">實體範圍</p>
+                <img id="preview2" class="preview-box">
+            </div>
         </div>
+        
         <div style="font-size: 12px; color: #888; margin-top: 5px;">(比對完成後，可點擊上方照片進行手動疊影覆核)</div>
 
         <div style="display: flex; margin-top: 20px; gap: 10px;" id="action-buttons">
             <button id="backBtn2" class="btn-secondary" style="flex: 1;">回上一步</button>
             <button id="submitBtn" style="flex: 2;">送出 AI 進行比對</button>
         </div>
-        <div id="loading">⏳ OCR 測量與 AI 判讀中，請稍候...</div>
+        
+        <div id="loading">⏳ OCR 測量與 AI 判讀中...</div>
         
         <div id="result-box" style="display:none;">
             <div id="star-rating" class="stars"></div>
             <h3 id="geo-status-text" style="color: #dc3545; text-align: center; margin-top: 0; margin-bottom: 20px;"></h3>
+            
             <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 5px solid #007bff; margin-bottom: 15px;">
-                <h4 style="margin-top: 0; color: #007bff; display: flex; align-items: center;"><span style="font-size: 20px; margin-right: 8px;">📐</span> OCR 幾何運算報告</h4>
+                <h4 style="margin-top: 0; color: #007bff; display: flex; align-items: center;">
+                    <span style="font-size: 20px; margin-right: 8px;">📐</span> OCR 幾何運算報告
+                </h4>
                 <p id="geo-explanation-text" style="line-height: 1.6; color: #555; font-family: monospace; white-space: pre-line; margin-bottom: 0;"></p>
             </div>
+            
             <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 5px solid #ffc107;">
-                <h4 style="margin-top: 0; color: #d39e00; display: flex; align-items: center;"><span style="font-size: 20px; margin-right: 8px;">👁️</span> AI 外觀特徵輔助觀察</h4>
+                <h4 style="margin-top: 0; color: #d39e00; display: flex; align-items: center;">
+                    <span style="font-size: 20px; margin-right: 8px;">👁️</span> AI 外觀特徵輔助觀察
+                </h4>
                 <p id="ai-explanation-text" style="line-height: 1.6; color: #664d03; margin-bottom: 0;"></p>
             </div>
         </div>
-        <button id="resetBtn" style="display:none; width: 100%; background: #28a745; margin-top: 15px;" onclick="location.reload()">開始新的一筆比對</button>
+        
+        <button id="resetBtn" style="display:none; width: 100%; background: #28a745; margin-top: 15px;" onclick="location.replace('index.html')">回首頁 (檢視紀錄)</button>
     </div>
 
     <button id="infoFab" class="fab">💡</button>
-
     <div id="infoModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" id="closeInfo">&times;</span>
-            <h3 style="margin-top:0; color:#007bff; display: flex; align-items: center;"><span style="font-size: 24px; margin-right: 8px;">📸</span> 拍照與角度說明</h3>
-            <p style="color: #444; font-size: 14px;"><strong>❓ 為什麼有時需要按「↻ 旋轉 90°」？</strong><br>在狹窄空間拍照時，若照片呈現「直立（垂直）」，AI 將無法進行由左至右的字元配對。遇到此情況，請點擊旋轉按鈕將鋼印轉為「橫向」後再裁切。</p>
-            <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
-            <p style="color: #444; font-size: 14px;"><strong>📐 拍照歪斜會影響精準度嗎？</strong><br><b>完全不會！</b> 只要字體清晰且整體呈現橫向，即使相機傾斜 10°～20°，系統強大的幾何引擎皆會自動抓出基準線並「拉平校正」。您不需強求完美水平。</p>
+            <h3 style="margin-top:0; color:#007bff;">📸 拍照與角度說明</h3>
+            <p style="color: #444; font-size: 14px;"><strong>❓ 為什麼有時需要按「↻ 旋轉 90°」？</strong><br>在狹窄空間拍照若呈現「直立」，AI 將無法進行由左至右配對，請將鋼印轉為「橫向」。</p>
+            <hr>
+            <p style="color: #444; font-size: 14px;"><strong>📐 拍照歪斜會影響精準度嗎？</strong><br><b>完全不會！</b> 只要字體清晰且整體橫向，相機傾斜 10°～20° 系統皆會自動「拉平校正」。</p>
         </div>
     </div>
 
     <div id="checkModal">
+        <div id="topCloseCheckBtn">&times;</div>
         <div id="check-container">
             <img id="checkBaseImg" class="check-base" src="">
             <img id="checkOverlayImg" class="check-overlay" src="">
@@ -161,216 +217,361 @@
         // ★★★ 請替換為你最新的 GAS Web App URL ★★★
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbycbiOxbx9T4ynci32AWE46a-B42N_MaIQUBmwvsuzj3WiJ5_dHEL3Z_qw3cv8nkGZkAw/exec"; 
 
+        // 全域變數
         let cropper1 = null, cropper2 = null;
         let finalImg1Data = null, finalImg2Data = null;
-        let pdfDoc1 = null, pdfPage1 = 1; let pdfDoc2 = null, pdfPage2 = 1;
-        let canOpenCheck = false; 
+        let pdfDoc1 = null, pdfPage1 = 1; 
+        let pdfDoc2 = null, pdfPage2 = 1;
+        let canOpenCheck = false; // 控制是否允許開啟疊影視窗
 
-        // --- Modal 控制 ---
+        // ---------------------------------------------------------
+        // Modal 與返回鍵攔截邏輯 (InfoModal & CheckModal)
+        // ---------------------------------------------------------
         const infoModal = document.getElementById("infoModal");
-        const infoFab = document.getElementById("infoFab");
-        const closeInfo = document.getElementById("closeInfo");
-        infoFab.onclick = function() { infoModal.style.display = "block"; }
-        closeInfo.onclick = function() { infoModal.style.display = "none"; }
-        window.addEventListener('click', function(event) { if (event.target == infoModal) { infoModal.style.display = "none"; } });
+        
+        document.getElementById("infoFab").onclick = () => {
+            infoModal.style.display = "block";
+        };
+        document.getElementById("closeInfo").onclick = () => {
+            infoModal.style.display = "none";
+        };
 
-        // --- 人工覆核視窗 (CheckModal) 手勢控制邏輯 ---
-        const checkOverlayImg = document.getElementById('checkOverlayImg');
+        const checkModal = document.getElementById('checkModal');
+        const checkBaseImg = document.getElementById('checkBaseImg');
+        const checkOpacitySlider = document.getElementById('checkOpacitySlider');
+
+        // 開啟疊影覆核
+        function openCheckModal(clickedImgId) {
+            if (!canOpenCheck || !finalImg1Data || !finalImg2Data) return;
+            
+            document.getElementById("infoFab").style.display = 'none'; 
+            
+            // 重置疊影變數
+            currentX = 0; currentY = 0; xOffset = 0; yOffset = 0; 
+            currentScale = 1; currentRotation = 0; 
+            checkOpacitySlider.value = 0.5; 
+            checkOverlayImg.style.opacity = 0.5; 
+            updateOverlayTransform();
+            
+            // 決定誰是底圖
+            if (clickedImgId === 'preview1') { 
+                checkBaseImg.src = finalImg1Data; 
+                checkOverlayImg.src = finalImg2Data; 
+            } else { 
+                checkBaseImg.src = finalImg2Data; 
+                checkOverlayImg.src = finalImg1Data; 
+            }
+            
+            checkModal.style.display = 'block';
+            document.body.style.overflow = 'hidden'; 
+            
+            // 寫入歷史紀錄，騙過手機的返回鍵
+            history.pushState({ isModalOpen: true }, "", "");
+        }
+
+        // 關閉疊影覆核
+        function closeCheckModal(fromPopState = false) {
+            checkModal.style.display = 'none';
+            document.getElementById("infoFab").style.display = 'flex';
+            document.body.style.overflow = ''; 
+            
+            // 如果是用畫面按鈕關的，手動返回一步來消耗剛剛推入的 history
+            if (!fromPopState) { 
+                history.back(); 
+            }
+        }
+
+        // 監聽手機實體返回鍵
+        window.addEventListener("popstate", function(event) {
+            if (checkModal.style.display === 'block') {
+                closeCheckModal(true); // 傳入 true 代表是按了返回鍵
+            }
+        });
+
+        document.getElementById('preview1').addEventListener('click', () => openCheckModal('preview1'));
+        document.getElementById('preview2').addEventListener('click', () => openCheckModal('preview2'));
+        document.getElementById('closeCheckBtn').addEventListener('click', () => closeCheckModal(false));
+        document.getElementById('topCloseCheckBtn').addEventListener('click', () => closeCheckModal(false));
+        
+        checkOpacitySlider.addEventListener('input', function() { 
+            checkOverlayImg.style.opacity = this.value; 
+            document.getElementById('checkOpacityVal').innerText = Math.round(this.value * 100) + '%'; 
+        });
+
+
+        // ---------------------------------------------------------
+        // 手動疊影視窗 (CheckModal) 的手勢幾何邏輯
+        // ---------------------------------------------------------
         const checkContainer = document.getElementById('check-container');
+        const checkOverlayImg = document.getElementById('checkOverlayImg');
         
         let isDragging = false;
         let startX, startY;
-        let currentX = 0, currentY = 0; 
-        let xOffset = 0, yOffset = 0;
-        let currentScale = 1; 
-        let currentRotation = 0; 
-        
-        let initialPinchDistance = null;
-        let initialPinchScale = 1;
-        let initialTouchAngle = null;
-        let initialElementRotation = 0;
+        let currentX = 0, currentY = 0, xOffset = 0, yOffset = 0;
+        let currentScale = 1, currentRotation = 0;
+        let initialPinchDistance = null, initialPinchScale = 1;
+        let initialTouchAngle = null, initialElementRotation = 0;
 
-        function updateOverlayTransform() {
-            checkOverlayImg.style.transform = `translate(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px)) scale(${currentScale}) rotate(${currentRotation}deg)`;
+        function updateOverlayTransform() { 
+            checkOverlayImg.style.transform = `translate(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px)) scale(${currentScale}) rotate(${currentRotation}deg)`; 
+        }
+        function getDistance(touches) { 
+            return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY); 
+        }
+        function getAngle(touches) { 
+            return Math.atan2(touches[0].clientY - touches[1].clientY, touches[0].clientX - touches[1].clientX); 
+        }
+        function radToDeg(rad) { 
+            return rad * (180 / Math.PI); 
         }
 
-        function getDistance(touches) { return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY); }
-        function getAngle(touches) { return Math.atan2(touches[0].clientY - touches[1].clientY, touches[0].clientX - touches[1].clientX); }
-        function radToDeg(rad) { return rad * (180 / Math.PI); }
-
-        // ★ 這裡已經修正在前一版誤植為 cameraContainer 的錯誤，統一使用 checkContainer ★
         checkContainer.addEventListener("touchstart", function(e) {
-            if (!overlayImageLoaded) return; 
-            if (e.touches.length === 1) {
-                isDragging = true;
-                startX = e.touches[0].clientX - xOffset;
-                startY = e.touches[0].clientY - yOffset;
-            } else if (e.touches.length === 2) {
+            if (e.touches.length === 1) { 
+                isDragging = true; 
+                startX = e.touches[0].clientX - xOffset; 
+                startY = e.touches[0].clientY - yOffset; 
+            } else if (e.touches.length === 2) { 
                 isDragging = false; 
-                initialPinchDistance = getDistance(e.touches);
-                initialPinchScale = currentScale;
-                initialTouchAngle = getAngle(e.touches);
-                initialElementRotation = currentRotation;
+                initialPinchDistance = getDistance(e.touches); 
+                initialPinchScale = currentScale; 
+                initialTouchAngle = getAngle(e.touches); 
+                initialElementRotation = currentRotation; 
             }
         }, { passive: false });
 
         checkContainer.addEventListener("touchmove", function(e) {
-            if (!overlayImageLoaded) return;
-            e.preventDefault(); 
-            if (e.touches.length === 1 && isDragging) {
-                currentX = e.touches[0].clientX - startX;
-                currentY = e.touches[0].clientY - startY;
-                xOffset = currentX; yOffset = currentY;
-                updateOverlayTransform();
-            } else if (e.touches.length === 2 && initialPinchDistance !== null) {
-                const currentDistance = getDistance(e.touches);
-                const scaleDelta = currentDistance / initialPinchDistance;
-                currentScale = Math.min(Math.max(0.1, initialPinchScale * scaleDelta), 5); 
-                
-                const currentTouchAngle = getAngle(e.touches);
-                const angleDeltaRad = currentTouchAngle - initialTouchAngle;
-                currentRotation = initialElementRotation + radToDeg(angleDeltaRad);
-                
-                updateOverlayTransform();
+            e.preventDefault(); // 阻止背景滾動
+            if (e.touches.length === 1 && isDragging) { 
+                currentX = e.touches[0].clientX - startX; 
+                currentY = e.touches[0].clientY - startY; 
+                xOffset = currentX; 
+                yOffset = currentY; 
+                updateOverlayTransform(); 
+            } else if (e.touches.length === 2 && initialPinchDistance !== null) { 
+                // 縮放
+                currentScale = Math.min(Math.max(0.1, initialPinchScale * (getDistance(e.touches) / initialPinchDistance)), 5); 
+                // 旋轉
+                currentRotation = initialElementRotation + radToDeg(getAngle(e.touches) - initialTouchAngle); 
+                updateOverlayTransform(); 
             }
         }, { passive: false });
 
-        checkContainer.addEventListener("touchend", function(e) {
-            if (e.touches.length < 2) { initialPinchDistance = null; initialTouchAngle = null; }
-            if (e.touches.length === 1) {
-                isDragging = true;
-                startX = e.touches[0].clientX - xOffset;
-                startY = e.touches[0].clientY - yOffset;
-            } else if (e.touches.length === 0) {
-                isDragging = false;
-            }
+        checkContainer.addEventListener("touchend", function(e) { 
+            if (e.touches.length < 2) { 
+                initialPinchDistance = null; 
+                initialTouchAngle = null; 
+            } 
+            if (e.touches.length === 1) { 
+                isDragging = true; 
+                startX = e.touches[0].clientX - xOffset; 
+                startY = e.touches[0].clientY - yOffset; 
+            } else if (e.touches.length === 0) { 
+                isDragging = false; 
+            } 
         }, { passive: false });
 
-        checkContainer.addEventListener("touchcancel", function(e) { isDragging = false; initialPinchDistance = null; initialTouchAngle = null; }, { passive: false });
 
-        // --- 覆核視窗介面開關 ---
-        const checkModal = document.getElementById('checkModal');
-        const checkBaseImg = document.getElementById('checkBaseImg');
-        const checkOpacitySlider = document.getElementById('checkOpacitySlider');
-        const checkOpacityVal = document.getElementById('checkOpacityVal');
-        const closeCheckBtn = document.getElementById('closeCheckBtn');
-        let overlayImageLoaded = false;
-
-        function resetCheckGeometry() {
-            currentX = 0; currentY = 0; xOffset = 0; yOffset = 0;
-            currentScale = 1; currentRotation = 0;
-            checkOpacitySlider.value = 0.5;
-            checkOpacityVal.innerText = "50%";
-            checkOverlayImg.style.opacity = 0.5;
-            updateOverlayTransform();
+        // ---------------------------------------------------------
+        // 核心流程：步驟切換、PDF 渲染、檔案讀取
+        // ---------------------------------------------------------
+        function updateProgress(step) { 
+            document.querySelectorAll('.progressbar li').forEach((li, index) => { 
+                li.className = ''; 
+                if (index + 1 < step) li.classList.add('completed'); 
+                else if (index + 1 === step) li.classList.add('active'); 
+            }); 
         }
 
-        function openCheckModal(clickedImgId) {
-            if (!canOpenCheck || !finalImg1Data || !finalImg2Data) return;
-            infoFab.style.display = 'none'; 
-            overlayImageLoaded = false;
-            resetCheckGeometry();
-
-            if (clickedImgId === 'preview1') {
-                checkBaseImg.src = finalImg1Data; checkOverlayImg.src = finalImg2Data;
-            } else {
-                checkBaseImg.src = finalImg2Data; checkOverlayImg.src = finalImg1Data;
-            }
-
-            checkOverlayImg.onload = () => { overlayImageLoaded = true; };
-            checkModal.style.display = 'block';
-            document.body.style.overflow = 'hidden'; 
+        function switchStep(fromStep, toStep) { 
+            document.getElementById(`step${fromStep}`).classList.remove('active-step'); 
+            document.getElementById(`step${toStep}`).classList.add('active-step'); 
+            updateProgress(toStep); 
         }
 
-        function closeCheckModal() {
-            checkModal.style.display = 'none';
-            infoFab.style.display = 'flex';
-            document.body.style.overflow = ''; 
-            checkBaseImg.src = ''; checkOverlayImg.src = ''; overlayImageLoaded = false;
+        function showButtons(stepNum) { 
+            document.getElementById(`cropBtn${stepNum}`).style.display = 'inline-block'; 
+            document.getElementById(`rotateBtn${stepNum}`).style.display = 'inline-block'; 
         }
 
-        document.getElementById('preview1').addEventListener('click', () => openCheckModal('preview1'));
-        document.getElementById('preview2').addEventListener('click', () => openCheckModal('preview2'));
-        closeCheckBtn.addEventListener('click', closeCheckModal);
-        checkOpacitySlider.addEventListener('input', function() { checkOverlayImg.style.opacity = this.value; checkOpacityVal.innerText = Math.round(this.value * 100) + '%'; });
-
-        // --- 主流程邏輯 ---
-        function updateProgress(step) { document.querySelectorAll('.progressbar li').forEach((li, index) => { li.className = ''; if (index + 1 < step) li.classList.add('completed'); else if (index + 1 === step) li.classList.add('active'); }); }
-        function switchStep(fromStep, toStep) { document.getElementById(`step${fromStep}`).classList.remove('active-step'); document.getElementById(`step${toStep}`).classList.add('active-step'); updateProgress(toStep); }
-        function showButtons(stepNum) { document.getElementById(`cropBtn${stepNum}`).style.display = 'inline-block'; document.getElementById(`rotateBtn${stepNum}`).style.display = 'inline-block'; }
-
-        async function renderPdfPage(pdfDoc, pageNum, imgElement, stepNum) {
-            const page = await pdfDoc.getPage(pageNum); const viewport = page.getViewport({ scale: 2.0 });
-            const canvas = document.createElement('canvas'); const context = canvas.getContext('2d');
-            canvas.height = viewport.height; canvas.width = viewport.width;
-            await page.render({ canvasContext: context, viewport: viewport }).promise;
-            imgElement.onload = () => {
-                if (stepNum === 1) { if (cropper1) cropper1.destroy(); cropper1 = new Cropper(imgElement, { viewMode: 1, autoCropArea: 0.8 }); } 
-                else { if (cropper2) cropper2.destroy(); cropper2 = new Cropper(imgElement, { viewMode: 1, autoCropArea: 0.8 }); }
-                showButtons(stepNum);
-            };
-            imgElement.src = canvas.toDataURL('image/jpeg');
-            document.getElementById(`page-info-${stepNum}`).innerText = `第 ${pageNum} 頁 / 共 ${pdfDoc.numPages} 頁`;
-            document.getElementById(`prev-page-${stepNum}`).disabled = pageNum <= 1; document.getElementById(`next-page-${stepNum}`).disabled = pageNum >= pdfDoc.numPages;
+        async function renderPdfPage(pdfDoc, pageNum, imgElement, stepNum) { 
+            const page = await pdfDoc.getPage(pageNum); 
+            const viewport = page.getViewport({ scale: 2.0 }); 
+            const canvas = document.createElement('canvas'); 
+            const context = canvas.getContext('2d'); 
+            canvas.height = viewport.height; 
+            canvas.width = viewport.width; 
+            
+            await page.render({ canvasContext: context, viewport: viewport }).promise; 
+            
+            imgElement.onload = () => { 
+                if (stepNum === 1) { 
+                    if (cropper1) cropper1.destroy(); 
+                    cropper1 = new Cropper(imgElement, { viewMode: 1, autoCropArea: 0.8 }); 
+                } else { 
+                    if (cropper2) cropper2.destroy(); 
+                    cropper2 = new Cropper(imgElement, { viewMode: 1, autoCropArea: 0.8 }); 
+                } 
+                showButtons(stepNum); 
+            }; 
+            imgElement.src = canvas.toDataURL('image/jpeg'); 
+            
+            document.getElementById(`page-info-${stepNum}`).innerText = `第 ${pageNum} 頁 / 共 ${pdfDoc.numPages} 頁`; 
+            document.getElementById(`prev-page-${stepNum}`).disabled = pageNum <= 1; 
+            document.getElementById(`next-page-${stepNum}`).disabled = pageNum >= pdfDoc.numPages; 
         }
 
-        function processFile(file, imgElement, stepNum, filenameDisplay) {
-            if (!file) return; filenameDisplay.innerText = file.name;
-            document.getElementById(`pdf-controls-${stepNum}`).style.display = 'none';
-            if (file.type === 'application/pdf') {
-                const fileReader = new FileReader();
-                fileReader.onload = async function() {
-                    try { const typedarray = new Uint8Array(this.result); const pdf = await pdfjsLib.getDocument(typedarray).promise; document.getElementById(`pdf-controls-${stepNum}`).style.display = 'flex';
-                        if (stepNum === 1) { pdfDoc1 = pdf; pdfPage1 = 1; renderPdfPage(pdfDoc1, pdfPage1, imgElement, 1); } 
-                        else { pdfDoc2 = pdf; pdfPage2 = 1; renderPdfPage(pdfDoc2, pdfPage2, imgElement, 2); }
-                    } catch (error) { alert("PDF 讀取失敗。"); }
-                }; fileReader.readAsArrayBuffer(file);
-            } else {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    imgElement.onload = () => {
-                        if (stepNum === 1) { if (cropper1) cropper1.destroy(); cropper1 = new Cropper(imgElement, { viewMode: 1, autoCropArea: 0.8 }); } 
-                        else { if (cropper2) cropper2.destroy(); cropper2 = new Cropper(imgElement, { viewMode: 1, autoCropArea: 0.8 }); }
-                        showButtons(stepNum);
-                    }; imgElement.src = e.target.result;
-                }; reader.readAsDataURL(file);
-            }
+        function processFile(file, imgElement, stepNum, filenameDisplay) { 
+            if (!file) return; 
+            filenameDisplay.innerText = file.name; 
+            document.getElementById(`pdf-controls-${stepNum}`).style.display = 'none'; 
+            
+            if (file.type === 'application/pdf') { 
+                const fileReader = new FileReader(); 
+                fileReader.onload = async function() { 
+                    try { 
+                        const typedarray = new Uint8Array(this.result); 
+                        const pdf = await pdfjsLib.getDocument(typedarray).promise; 
+                        document.getElementById(`pdf-controls-${stepNum}`).style.display = 'flex'; 
+                        
+                        if (stepNum === 1) { 
+                            pdfDoc1 = pdf; pdfPage1 = 1; 
+                            renderPdfPage(pdfDoc1, pdfPage1, imgElement, 1); 
+                        } else { 
+                            pdfDoc2 = pdf; pdfPage2 = 1; 
+                            renderPdfPage(pdfDoc2, pdfPage2, imgElement, 2); 
+                        } 
+                    } catch (error) { 
+                        alert("PDF 讀取失敗。"); 
+                    } 
+                }; 
+                fileReader.readAsArrayBuffer(file); 
+            } else { 
+                const reader = new FileReader(); 
+                reader.onload = (e) => { 
+                    imgElement.onload = () => { 
+                        if (stepNum === 1) { 
+                            if (cropper1) cropper1.destroy(); 
+                            cropper1 = new Cropper(imgElement, { viewMode: 1, autoCropArea: 0.8 }); 
+                        } else { 
+                            if (cropper2) cropper2.destroy(); 
+                            cropper2 = new Cropper(imgElement, { viewMode: 1, autoCropArea: 0.8 }); 
+                        } 
+                        showButtons(stepNum); 
+                    }; 
+                    imgElement.src = e.target.result; 
+                }; 
+                reader.readAsDataURL(file); 
+            } 
         }
 
+        // --- 綁定前端按鈕事件 ---
+        
+        // 步驟 1 事件
         document.getElementById('file1').addEventListener('change', function(e) { processFile(e.target.files[0], document.getElementById('image1'), 1, document.getElementById('filename1')); });
         document.getElementById('prev-page-1').addEventListener('click', () => { if(pdfPage1 > 1) { pdfPage1--; renderPdfPage(pdfDoc1, pdfPage1, document.getElementById('image1'), 1); }});
         document.getElementById('next-page-1').addEventListener('click', () => { if(pdfPage1 < pdfDoc1.numPages) { pdfPage1++; renderPdfPage(pdfDoc1, pdfPage1, document.getElementById('image1'), 1); }});
         document.getElementById('rotateBtn1').addEventListener('click', () => { if(cropper1) cropper1.rotate(90); });
-        document.getElementById('cropBtn1').addEventListener('click', () => { if (!cropper1) return; finalImg1Data = cropper1.getCroppedCanvas().toDataURL('image/jpeg'); document.getElementById('preview1').src = finalImg1Data; switchStep(1, 2); });
+        document.getElementById('cropBtn1').addEventListener('click', () => { 
+            if (!cropper1) return; 
+            finalImg1Data = cropper1.getCroppedCanvas().toDataURL('image/jpeg'); 
+            document.getElementById('preview1').src = finalImg1Data; 
+            switchStep(1, 2); 
+        });
 
+        // 步驟 2 事件
         document.getElementById('file2').addEventListener('change', function(e) { processFile(e.target.files[0], document.getElementById('image2'), 2, document.getElementById('filename2')); });
         document.getElementById('prev-page-2').addEventListener('click', () => { if(pdfPage2 > 1) { pdfPage2--; renderPdfPage(pdfDoc2, pdfPage2, document.getElementById('image2'), 2); }});
         document.getElementById('next-page-2').addEventListener('click', () => { if(pdfPage2 < pdfDoc2.numPages) { pdfPage2++; renderPdfPage(pdfDoc2, pdfPage2, document.getElementById('image2'), 2); }});
         document.getElementById('backBtn1').addEventListener('click', () => switchStep(2, 1));
         document.getElementById('rotateBtn2').addEventListener('click', () => { if(cropper2) cropper2.rotate(90); });
-        document.getElementById('cropBtn2').addEventListener('click', () => { if (!cropper2) return; finalImg2Data = cropper2.getCroppedCanvas().toDataURL('image/jpeg'); document.getElementById('preview2').src = finalImg2Data; switchStep(2, 3); });
+        document.getElementById('cropBtn2').addEventListener('click', () => { 
+            if (!cropper2) return; 
+            finalImg2Data = cropper2.getCroppedCanvas().toDataURL('image/jpeg'); 
+            document.getElementById('preview2').src = finalImg2Data; 
+            switchStep(2, 3); 
+        });
+
+        // 步驟 3 事件
         document.getElementById('backBtn2').addEventListener('click', () => switchStep(3, 2));
+
+
+        // ---------------------------------------------------------
+        // 送出 GAS API 與 LocalStorage 本機存檔邏輯
+        // ---------------------------------------------------------
+        
+        // 產生輕量縮圖的輔助函數
+        function generateThumbnail(imgElement) {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 200; // 限制寬度以節省容量
+            const scale = MAX_WIDTH / imgElement.naturalWidth;
+            canvas.width = MAX_WIDTH; 
+            canvas.height = imgElement.naturalHeight * scale;
+            canvas.getContext('2d').drawImage(imgElement, 0, 0, canvas.width, canvas.height);
+            return canvas.toDataURL('image/jpeg', 0.6); // 降低畫質存入本機
+        }
 
         document.getElementById('submitBtn').addEventListener('click', async () => {
             if (!GAS_API_URL.startsWith("http")) { alert("請先填入 GAS_API_URL"); return; }
-            document.getElementById('action-buttons').style.display = 'none'; document.getElementById('loading').style.display = 'block';
+            
+            document.getElementById('action-buttons').style.display = 'none'; 
+            document.getElementById('loading').style.display = 'block';
 
             try {
-                const response = await fetch(GAS_API_URL, { method: 'POST', body: JSON.stringify({ img1: finalImg1Data, img2: finalImg2Data }), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+                // 呼叫後端 Google Apps Script
+                const response = await fetch(GAS_API_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ img1: finalImg1Data, img2: finalImg2Data }), 
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' } 
+                });
+                
                 const result = await response.json();
                 
-                document.getElementById('loading').style.display = 'none'; document.getElementById('result-box').style.display = 'block'; document.getElementById('resetBtn').style.display = 'block';
-                document.querySelector('#indicator-step3').classList.remove('active'); document.querySelector('#indicator-step3').classList.add('completed');
+                // 處理 UI 顯示
+                document.getElementById('loading').style.display = 'none'; 
+                document.getElementById('result-box').style.display = 'block'; 
+                document.getElementById('resetBtn').style.display = 'block';
+                document.querySelector('#indicator-step3').classList.remove('active'); 
+                document.querySelector('#indicator-step3').classList.add('completed');
                 
+                // 允許開啟疊影視窗
                 canOpenCheck = true;
                 
+                // 渲染資料 (隱藏了流水號)
                 document.getElementById('star-rating').innerText = '★'.repeat(result.star) + '☆'.repeat(5 - result.star);
                 document.getElementById('geo-status-text').innerText = result.geo_status;
                 document.getElementById('geo-status-text').style.color = result.star >= 4 ? '#28a745' : '#dc3545';
                 document.getElementById('geo-explanation-text').innerText = result.geo_explanation;
                 document.getElementById('ai-explanation-text').innerText = result.ai_explanation;
 
-            } catch (error) { alert("比對發生錯誤：" + error); document.getElementById('action-buttons').style.display = 'flex'; document.getElementById('loading').style.display = 'none'; }
+                // ★ 將紀錄寫入手機本機儲存空間 (LocalStorage) ★
+                try {
+                    const thumb1 = generateThumbnail(document.getElementById('preview1'));
+                    const thumb2 = generateThumbnail(document.getElementById('preview2'));
+                    const historyData = JSON.parse(localStorage.getItem('stamp_history') || '[]');
+                    
+                    historyData.unshift({
+                        id: Date.now(),
+                        time: new Date().toLocaleString('zh-TW', { hour12: false }),
+                        star: result.star,
+                        geo_status: result.geo_status,
+                        ai_explanation: result.ai_explanation,
+                        thumb1: thumb1,
+                        thumb2: thumb2
+                    });
+                    
+                    // 最多只保留 15 筆，避免塞爆手機瀏覽器記憶體
+                    if (historyData.length > 15) historyData.pop();
+                    localStorage.setItem('stamp_history', JSON.stringify(historyData));
+                    
+                } catch (e) { 
+                    console.error("本機存檔失敗，可能是容量滿了或無痕模式", e); 
+                }
+
+            } catch (error) { 
+                alert("比對發生錯誤：" + error); 
+                document.getElementById('action-buttons').style.display = 'flex'; 
+                document.getElementById('loading').style.display = 'none'; 
+            }
         });
     </script>
 </body>
