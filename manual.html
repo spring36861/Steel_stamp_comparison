@@ -3,44 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>鋼印/印鑑半透明比對工具</title>
+    <title>鋼印/印鑑半透明比對工具 (手勢旋轉版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <style>
-        body { 
-            margin: 0; padding: 0; background-color: #333; color: white; 
-            font-family: sans-serif; overflow: hidden; 
-            /* 這是防干擾的關鍵，防止手機亂滑動 */
-            touch-action: none; 
-        }
-        #controls { 
-            position: fixed; bottom: 0; left: 0; width: 100%; 
-            background: rgba(0, 0, 0, 0.85); padding: 15px; 
-            box-sizing: border-box; z-index: 100; 
-            display: flex; flex-direction: column; gap: 15px; 
-        }
+        body { margin: 0; padding: 0; background-color: #333; color: white; font-family: sans-serif; overflow: hidden; touch-action: none; /* 防止原生手勢干擾 */ }
+        
+        /* 底部控制面板 */
+        #controls { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(0, 0, 0, 0.85); padding: 15px; box-sizing: border-box; z-index: 100; display: flex; flex-direction: column; gap: 12px; }
         .control-group { display: flex; align-items: center; justify-content: space-between; }
-        .control-group label { width: 80px; font-size: 14px; }
+        .control-group label { width: 60px; font-size: 14px; }
         .control-group input[type="range"] { flex-grow: 1; margin: 0 10px; }
         
-        /* 將相機容器設為全螢幕，並作為觸控的主要接收區 */
-        #camera-container { 
-            position: absolute; top: 0; left: 0; 
-            width: 100vw; height: 100vh; 
-            display: flex; justify-content: center; align-items: center; 
-            overflow: hidden; z-index: 1;
-        }
+        /* 全螢幕相機與觸控容器 */
+        #camera-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; z-index: 1; }
         #camera-feed { min-width: 100%; min-height: 100%; object-fit: cover; }
         
+        /* 懸浮疊圖 */
         #overlay-image {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%) scale(1);
-            opacity: 0.5; cursor: move;
-            border: 2px dashed rgba(255, 255, 255, 0.7);
-            display: none; max-width: 80vw;
-            /* 確保縮放時是以圖片正中心為基準 */
+            position: absolute; top: 50%; left: 50%; /* 初始居中 */
+            max-width: 80vw; max-height: 80vh; object-fit: contain;
+            opacity: 0.5; display: none;
+            /* 確保縮放與旋轉是以圖片正中心為基準 */
             transform-origin: center center; 
-            pointer-events: none; /* 讓觸控事件穿透圖片，直接交給容器處理 */
+            /* 初始 transform 狀態 */
+            transform: translate(-50%, -50%) scale(1) rotate(0deg); 
+            
+            border: 2px dashed rgba(255, 255, 255, 0.7);
+            pointer-events: none; /* 關鍵：讓觸控事件穿透圖片，由底層容器接收 */
         }
+        
         input[type="file"] { width: 100%; color: white; font-size: 16px; }
     </style>
 </head>
@@ -60,7 +51,8 @@
             <input type="range" id="opacity-slider" min="0.1" max="1" step="0.05" value="0.5">
             <span id="opacity-val">50%</span>
         </div>
-        </div>
+        <div style="font-size: 12px; color: #aaa; text-align: center;">(單指拖曳位置，雙指縮放與旋轉)</div>
+    </div>
 
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
@@ -71,12 +63,14 @@
         const opacitySlider = document.getElementById('opacity-slider');
         const cameraContainer = document.getElementById('camera-container');
         
+        let overlayLoaded = false;
+
         // --- 1. 啟動後置相機 ---
         async function startCamera() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                 video.srcObject = stream;
-            } catch (err) { alert("無法開啟相機，請確認瀏覽器權限設定。"); }
+            } catch (err) { alert("無法開啟相機，請確認瀏覽器權限。"); }
         }
         startCamera();
 
@@ -92,11 +86,10 @@
                     try {
                         const pdf = await pdfjsLib.getDocument(typedarray).promise;
                         const page = await pdf.getPage(1);
-                        const viewport = page.getViewport({ scale: 2.0 }); // 提高解析度讓放大不失真
+                        const viewport = page.getViewport({ scale: 2.5 }); // 高解析度
                         const canvas = document.createElement('canvas');
-                        const context = canvas.getContext('2d');
                         canvas.height = viewport.height; canvas.width = viewport.width;
-                        await page.render({ canvasContext: context, viewport: viewport }).promise;
+                        await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
                         overlayImage.src = canvas.toDataURL('image/png');
                         resetOverlay();
                     } catch (error) { alert("PDF 讀取失敗"); }
@@ -111,9 +104,11 @@
 
         function resetOverlay() {
             overlayImage.style.display = 'block';
-            xOffset = 0; yOffset = 0; currentX = 0; currentY = 0;
-            currentScale = 1;
-            setTransform(0, 0, 1);
+            overlayLoaded = true;
+            // 重置所有幾何狀態
+            currentX = 0; currentY = 0; xOffset = 0; yOffset = 0;
+            currentScale = 1; currentRotation = 0;
+            updateTransform();
         }
 
         // --- 3. 透明度控制 ---
@@ -122,61 +117,106 @@
             document.getElementById('opacity-val').innerText = Math.round(this.value * 100) + '%';
         });
 
-        // --- 4. 全螢幕手勢邏輯 (單指拖曳 + 雙指縮放) ---
+        // --- 4. 核心幾何手勢邏輯 (單指拖曳、雙指縮放、雙指旋轉) ---
         let isDragging = false;
         let startX, startY;
-        let currentX = 0, currentY = 0;
+        let currentX = 0, currentY = 0; // translate px
         let xOffset = 0, yOffset = 0;
-        let currentScale = 1;
+        let currentScale = 1; // scale
+        let currentRotation = 0; // rotate degrees
         
+        // 雙指手勢專用變數
         let initialPinchDistance = null;
-        let initialScale = 1;
+        let initialPinchScale = 1;
+        let initialTouchAngle = null;
+        let initialElementRotation = 0;
 
-        function setTransform(x, y, scale) {
-            overlayImage.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(${scale})`;
+        // 更新 CSS Transform 矩陣 (注意顺序：translate 必須在 scale/rotate 之前)
+        function updateTransform() {
+            // translate 使用 calc(-50% + offset) 來維持初始居中修正
+            overlayImage.style.transform = `translate(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px)) scale(${currentScale}) rotate(${currentRotation}deg)`;
         }
 
+        // 計算兩觸控點間距離
         function getDistance(touches) {
             return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
         }
 
-        // 將監聽器綁定在整個相機容器上
+        // 計算兩觸控點連線角度 (弧度)
+        function getAngle(touches) {
+            const dx = touches[0].clientX - touches[1].clientX;
+            const dy = touches[0].clientY - touches[1].clientY;
+            return Math.atan2(dy, dx); // 回傳 -PI 到 PI 之間的弧度
+        }
+
+        // 弧度轉角度
+        function radToDeg(rad) { return rad * (180 / Math.PI); }
+
+
+        // 將監聽器綁定在整個相機容器上，實現全螢幕觸控
         cameraContainer.addEventListener("touchstart", function(e) {
+            if (!overlayLoaded) return; // 沒載入圖片不動作
+
             if (e.touches.length === 1) {
+                // 單指：開始拖曳
                 isDragging = true;
+                // 紀錄相對於目前偏移量的起始點
                 startX = e.touches[0].clientX - xOffset;
                 startY = e.touches[0].clientY - yOffset;
             } else if (e.touches.length === 2) {
-                isDragging = false; 
+                // 雙指：開始縮放與旋轉手勢
+                isDragging = false; // 暫停單指拖曳
+                
+                // 紀錄初始縮放狀態
                 initialPinchDistance = getDistance(e.touches);
-                initialScale = currentScale;
+                initialPinchScale = currentScale;
+                
+                // 紀錄初始旋轉狀態
+                initialTouchAngle = getAngle(e.touches);
+                initialElementRotation = currentRotation;
             }
         }, { passive: false });
 
         cameraContainer.addEventListener("touchmove", function(e) {
+            if (!overlayLoaded) return;
             e.preventDefault(); // 阻擋預設滾動行為
-            
+
             if (e.touches.length === 1 && isDragging) {
+                // 單指拖曳中
                 currentX = e.touches[0].clientX - startX;
                 currentY = e.touches[0].clientY - startY;
-                xOffset = currentX;
+                xOffset = currentX; // 儲存偏移量
                 yOffset = currentY;
-                setTransform(currentX, currentY, currentScale);
+                updateTransform();
                 
-            } else if (e.touches.length === 2 && initialPinchDistance) {
+            } else if (e.touches.length === 2 && initialPinchDistance !== null) {
+                // 雙指手勢中：同時處理縮放與旋轉
+
+                // 1. 處理縮放
                 const currentDistance = getDistance(e.touches);
                 const scaleDelta = currentDistance / initialPinchDistance;
+                // 限制縮放範圍 (0.1倍 ~ 5倍)
+                currentScale = Math.min(Math.max(0.1, initialPinchScale * scaleDelta), 5);
                 
-                // 限制縮放倍率 (0.1倍 ~ 5.0倍)
-                currentScale = Math.min(Math.max(0.1, initialScale * scaleDelta), 5);
-                setTransform(currentX, currentY, currentScale);
+                // 2. 處理旋轉
+                const currentTouchAngle = getAngle(e.touches);
+                // 計算手指轉動的角度差 (弧度)
+                const angleDeltaRad = currentTouchAngle - initialTouchAngle;
+                // 將角度差應用到圖片原本的角度上 (轉成角度 deg)
+                currentRotation = initialElementRotation + radToDeg(angleDeltaRad);
+                
+                updateTransform();
             }
         }, { passive: false });
 
         cameraContainer.addEventListener("touchend", function(e) {
+            // 重置雙指變數
             if (e.touches.length < 2) {
                 initialPinchDistance = null;
+                initialTouchAngle = null;
             }
+            
+            // 如果放開一根手指剩下一根，無縫切換回拖曳模式
             if (e.touches.length === 1) {
                 isDragging = true;
                 startX = e.touches[0].clientX - xOffset;
@@ -184,6 +224,12 @@
             } else if (e.touches.length === 0) {
                 isDragging = false;
             }
+        }, { passive: false });
+
+        cameraContainer.addEventListener("touchcancel", function(e) {
+            isDragging = false;
+            initialPinchDistance = null;
+            initialTouchAngle = null;
         }, { passive: false });
 
     </script>
