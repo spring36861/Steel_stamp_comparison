@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>危險性機械及設備 AI鋼印比對工具</title>
+    <title>鋼印 AI 輔助判斷</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
@@ -29,7 +29,7 @@
         button:active { background: #0056b3; }
         .btn-secondary { background: #6c757d; }
         .btn-secondary:active { background: #5a6268; }
-        .btn-action { display: flex; gap: 10px; margin-top: 15px; } /* 新增按鈕群組排版 */
+        .btn-action { display: flex; gap: 10px; margin-top: 15px; } 
         input[type="file"] { display: none; }
         .custom-file-upload { display: inline-block; padding: 12px 24px; cursor: pointer; background-color: #17a2b8; color: white; border-radius: 5px; font-size: 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: background 0.2s; margin-bottom: 5px; width: 80%; max-width: 250px; }
         .custom-file-upload:active { background-color: #138496; }
@@ -41,6 +41,40 @@
         #result-box { margin-top: 20px; padding: 15px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: left; }
         .stars { color: #f39c12; font-size: 36px; font-weight: bold; margin: 10px 0; text-align: center; }
         #loading { display: none; color: #007bff; font-weight: bold; margin-top: 20px; font-size: 16px; }
+
+        /* --- 新增：懸浮按鈕 (FAB) 樣式 --- */
+        .fab {
+            position: fixed; bottom: 25px; right: 25px;
+            width: 55px; height: 55px; border-radius: 50%;
+            background-color: #17a2b8; color: white;
+            font-size: 26px; border: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            cursor: pointer; z-index: 1000;
+            display: flex; justify-content: center; align-items: center;
+            transition: transform 0.2s, background-color 0.2s;
+            padding: 0; /* 修正圖示偏移 */
+        }
+        .fab:active { transform: scale(0.9); background-color: #138496; }
+
+        /* --- 新增：彈出視窗 (Modal) 樣式 --- */
+        .modal {
+            display: none; position: fixed; z-index: 1001;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            backdrop-filter: blur(2px); /* 背景模糊效果 */
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 20vh auto; padding: 25px;
+            border-radius: 12px; width: 85%; max-width: 400px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            position: relative; line-height: 1.6; text-align: left;
+        }
+        .close-modal {
+            position: absolute; right: 15px; top: 10px;
+            color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer;
+        }
+        .close-modal:hover, .close-modal:active { color: #333; }
     </style>
 </head>
 <body>
@@ -56,7 +90,6 @@
         <div id="filename1" class="file-name-display">尚未選擇任何檔案</div>
         <div id="pdf-controls-1" class="pdf-controls"><button id="prev-page-1">上一頁</button><span id="page-info-1">第 1 頁</span><button id="next-page-1">下一頁</button></div>
         <div class="img-container"><img id="image1" src=""></div>
-        
         <div class="btn-action">
             <button id="rotateBtn1" class="btn-secondary" style="display:none; flex: 1;">↻ 旋轉 90°</button>
             <button id="cropBtn1" style="display:none; flex: 2;">下一步：確認拓印</button>
@@ -70,7 +103,6 @@
         <div id="filename2" class="file-name-display">尚未選擇任何檔案</div>
         <div id="pdf-controls-2" class="pdf-controls"><button id="prev-page-2">上一頁</button><span id="page-info-2">第 1 頁</span><button id="next-page-2">下一頁</button></div>
         <div class="img-container"><img id="image2" src=""></div>
-        
         <div class="btn-action">
             <button id="backBtn1" class="btn-secondary" style="flex: 1; padding: 12px 5px;">回上一步</button>
             <button id="rotateBtn2" class="btn-secondary" style="display:none; flex: 1.2; padding: 12px 5px;">↻ 旋轉 90°</button>
@@ -86,12 +118,8 @@
         </div>
         <div style="display: flex; margin-top: 20px; gap: 10px;" id="action-buttons">
             <button id="backBtn2" class="btn-secondary" style="flex: 1;">回上一步</button>
-            <button id="submitBtn" style="flex: 2;">送出比對並建檔</button>
-        </div>
-        <div id="loading">⏳ OCR 測量、AI 判讀與雲端建檔中...</div>
-        
-        <div id="result-box" style="display:none;">
-            <p id="seq-id-display" style="text-align: center; font-family: monospace; color: #6c757d; margin-bottom: 0;"></p>
+            <button id="submitBtn" style="flex: 2;">送出 AI 進行比對</button> </div>
+        <div id="loading">⏳ OCR 測量與 AI 判讀中，請稍候...</div> <div id="result-box" style="display:none;">
             <div id="star-rating" class="stars"></div>
             <h3 id="geo-status-text" style="color: #dc3545; text-align: center; margin-top: 0; margin-bottom: 20px;"></h3>
             <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 5px solid #007bff; margin-bottom: 15px;">
@@ -103,7 +131,27 @@
                 <p id="ai-explanation-text" style="line-height: 1.6; color: #664d03; margin-bottom: 0;"></p>
             </div>
         </div>
-        <button id="resetBtn" style="display:none; width: 100%; background: #28a745; margin-top: 15px;" onclick="location.reload()">💾 已存檔！開始新的一筆</button>
+        <button id="resetBtn" style="display:none; width: 100%; background: #28a745; margin-top: 15px;" onclick="location.reload()">開始新的一筆比對</button>
+    </div>
+
+    <button id="infoFab" class="fab">💡</button>
+
+    <div id="infoModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3 style="margin-top:0; color:#007bff; display: flex; align-items: center;">
+                <span style="font-size: 24px; margin-right: 8px;">📸</span> 拍照與角度說明
+            </h3>
+            <p style="color: #444;">
+                <strong style="color: #d35400;">❓ 為什麼有時需要按「↻ 旋轉 90°」？</strong><br>
+                在狹窄空間拍照時，若照片呈現「直立（垂直）」，AI 將無法進行由左至右的字元配對。遇到此情況，請點擊旋轉按鈕將鋼印轉為「橫向」後再裁切。
+            </p>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+            <p style="color: #444;">
+                <strong style="color: #28a745;">📐 拍照歪斜會影響精準度嗎？</strong><br>
+                <b>完全不會！</b> 只要字體清晰且整體呈現橫向，即使相機傾斜 10°～20°，系統強大的幾何引擎皆會自動抓出基準線並「拉平校正」。您不需強求完美水平，請安心拍攝！
+            </p>
+        </div>
     </div>
 
     <script>
@@ -115,6 +163,16 @@
         let cropper1 = null, cropper2 = null;
         let finalImg1Data = null, finalImg2Data = null;
         let pdfDoc1 = null, pdfPage1 = 1; let pdfDoc2 = null, pdfPage2 = 1;
+
+        // --- Modal 控制邏輯 ---
+        const modal = document.getElementById("infoModal");
+        const fab = document.getElementById("infoFab");
+        const span = document.getElementsByClassName("close-modal")[0];
+
+        fab.onclick = function() { modal.style.display = "block"; }
+        span.onclick = function() { modal.style.display = "none"; }
+        window.onclick = function(event) { if (event.target == modal) { modal.style.display = "none"; } }
+        // ----------------------
 
         function updateProgress(step) { document.querySelectorAll('.progressbar li').forEach((li, index) => { li.className = ''; if (index + 1 < step) li.classList.add('completed'); else if (index + 1 === step) li.classList.add('active'); }); }
         function switchStep(fromStep, toStep) { document.getElementById(`step${fromStep}`).classList.remove('active-step'); document.getElementById(`step${toStep}`).classList.add('active-step'); updateProgress(toStep); }
@@ -162,29 +220,20 @@
             }
         }
 
-        // --- 綁定事件 ---
         document.getElementById('file1').addEventListener('change', function(e) { processFile(e.target.files[0], document.getElementById('image1'), 1, document.getElementById('filename1')); });
         document.getElementById('prev-page-1').addEventListener('click', () => { if(pdfPage1 > 1) { pdfPage1--; renderPdfPage(pdfDoc1, pdfPage1, document.getElementById('image1'), 1); }});
         document.getElementById('next-page-1').addEventListener('click', () => { if(pdfPage1 < pdfDoc1.numPages) { pdfPage1++; renderPdfPage(pdfDoc1, pdfPage1, document.getElementById('image1'), 1); }});
-        
-        // ★ 新增：旋轉按鈕功能
         document.getElementById('rotateBtn1').addEventListener('click', () => { if(cropper1) cropper1.rotate(90); });
-        
         document.getElementById('cropBtn1').addEventListener('click', () => { if (!cropper1) return; finalImg1Data = cropper1.getCroppedCanvas().toDataURL('image/jpeg'); document.getElementById('preview1').src = finalImg1Data; switchStep(1, 2); });
 
         document.getElementById('file2').addEventListener('change', function(e) { processFile(e.target.files[0], document.getElementById('image2'), 2, document.getElementById('filename2')); });
         document.getElementById('prev-page-2').addEventListener('click', () => { if(pdfPage2 > 1) { pdfPage2--; renderPdfPage(pdfDoc2, pdfPage2, document.getElementById('image2'), 2); }});
         document.getElementById('next-page-2').addEventListener('click', () => { if(pdfPage2 < pdfDoc2.numPages) { pdfPage2++; renderPdfPage(pdfDoc2, pdfPage2, document.getElementById('image2'), 2); }});
         document.getElementById('backBtn1').addEventListener('click', () => switchStep(2, 1));
-        
-        // ★ 新增：旋轉按鈕功能
         document.getElementById('rotateBtn2').addEventListener('click', () => { if(cropper2) cropper2.rotate(90); });
-        
         document.getElementById('cropBtn2').addEventListener('click', () => { if (!cropper2) return; finalImg2Data = cropper2.getCroppedCanvas().toDataURL('image/jpeg'); document.getElementById('preview2').src = finalImg2Data; switchStep(2, 3); });
-        
         document.getElementById('backBtn2').addEventListener('click', () => switchStep(3, 2));
 
-        // --- 送出比對 ---
         document.getElementById('submitBtn').addEventListener('click', async () => {
             if (!GAS_API_URL.startsWith("http")) { alert("請先填入 GAS_API_URL"); return; }
             document.getElementById('action-buttons').style.display = 'none'; document.getElementById('loading').style.display = 'block';
@@ -196,7 +245,7 @@
                 document.getElementById('loading').style.display = 'none'; document.getElementById('result-box').style.display = 'block'; document.getElementById('resetBtn').style.display = 'block';
                 document.querySelector('#indicator-step3').classList.remove('active'); document.querySelector('#indicator-step3').classList.add('completed');
                 
-                if (result.seq_id) { document.getElementById('seq-id-display').innerText = `建檔編號: ${result.seq_id}`; }
+                // 移除了 result.seq_id 的前端顯示邏輯，但後台仍會儲存
                 document.getElementById('star-rating').innerText = '★'.repeat(result.star) + '☆'.repeat(5 - result.star);
                 document.getElementById('geo-status-text').innerText = result.geo_status;
                 document.getElementById('geo-status-text').style.color = result.star >= 4 ? '#28a745' : '#dc3545';
