@@ -262,67 +262,8 @@
             margin-top: 20px; 
             font-size: 16px; 
         }
-        
-        /* ================= 懸浮按鈕 (FAB) ================= */
-        .fab { 
-            position: fixed; 
-            bottom: 25px; 
-            right: 25px; 
-            width: 55px; 
-            height: 55px; 
-            border-radius: 50%; 
-            background-color: #17a2b8; 
-            color: white; 
-            font-size: 26px; 
-            border: none; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
-            cursor: pointer; 
-            z-index: 999; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-        }
-        .fab:active { 
-            transform: scale(0.9); 
-            background-color: #138496; 
-        }
-        
-        /* ================= 說明視窗 (Modal) ================= */
-        .modal { 
-            display: none; 
-            position: fixed; 
-            z-index: 1000; 
-            left: 0; 
-            top: 0; 
-            width: 100%; 
-            height: 100%; 
-            background-color: rgba(0,0,0,0.6); 
-            backdrop-filter: blur(2px); 
-            overflow-y: auto; 
-        }
-        .modal-content { 
-            background-color: #fefefe; 
-            margin: 5vh auto; 
-            padding: 25px; 
-            border-radius: 12px; 
-            width: 85%; 
-            max-width: 400px; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3); 
-            position: relative; 
-            line-height: 1.6; 
-            text-align: left; 
-        }
-        .close-modal { 
-            position: absolute; 
-            right: 15px; 
-            top: 10px; 
-            color: #aaa; 
-            font-size: 28px; 
-            font-weight: bold; 
-            cursor: pointer; 
-        }
-        
-        /* ================= 人工疊影比對視窗 (CheckModal) ================= */
+
+        /* ================= 人工手動疊影比對視窗 (CheckModal) ================= */
         #checkModal { 
             display: none; 
             position: fixed; 
@@ -505,6 +446,7 @@
         </div>
         
         <div id="loading">⏳ OCR 測量與 AI 判讀中...</div>
+        
         <div id="result-box" style="display:none;">
             <div id="star-rating" class="stars"></div>
             <h3 id="geo-status-text" style="color: #dc3545; text-align: center; margin-top: 0; margin-bottom: 20px;"></h3>
@@ -526,27 +468,6 @@
         <button id="resetBtn" style="display:none; width: 100%; background: #28a745; margin-top: 15px;" onclick="location.replace('index.html')">回首頁 (檢視紀錄)</button>
     </div>
 
-    <button id="infoFab" class="fab">💡</button>
-    <div id="infoModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" id="closeInfo">&times;</span>
-            <h3 style="margin-top:0; color:#007bff; border-bottom: 2px solid #eee; padding-bottom: 10px;">📸 AI 防偽系統 操作指南</h3>
-            
-            <h4 style="color: #dc3545; margin-bottom: 5px;">🚫 絕對禁忌 (必定誤判)</h4>
-            <ul style="color: #444; font-size: 14px; padding-left: 20px; margin-top: 0;">
-                <li style="margin-bottom: 8px;"><b>不可對螢幕翻拍：</b>請務必直接拍攝「實體鋼印」或「原始拓印紙」。對著電腦或手機螢幕翻拍，會產生摩爾紋（水波紋）與嚴重畫質失真，這將徹底破壞影像的微觀特徵，導致系統給出錯誤的判斷結果！</li>
-                <li><b>嚴禁正面閃光燈：</b>正面強光會吃掉金屬凹槽的陰影，讓鋼印瞬間「隱形」。</li>
-            </ul>
-            
-            <h4 style="color: #d35400; margin-bottom: 5px;">🔥 現場拍攝與拓印秘技</h4>
-            <ul style="color: #444; font-size: 14px; padding-left: 20px; margin-top: 0;">
-                <li style="margin-bottom: 8px;"><b>斜角打光法 (實體)：</b>請用手電筒從側邊 30°~45° 打光，製造鋼印凹槽陰影。</li>
-                <li style="margin-bottom: 8px;"><b>粉筆補強法 (實體)：</b>遇嚴重生鏽，用白色粉筆塗抹鋼印後擦去表面，製造黑白對比。</li>
-                <li><b>拓印字體不清：</b>若拓印底色太黑、字體不清楚，請務必勾選<b>「🪄 拓印專用：反相與去雜訊濾鏡」</b>，系統會自動將黑白顛倒，大幅提升 AI 認字率。</li>
-            </ul>
-        </div>
-    </div>
-
     <div id="checkModal">
         <div id="topCloseCheckBtn">&times;</div>
         <div id="check-container">
@@ -564,6 +485,7 @@
         </div>
     </div>
 
+
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
         
@@ -577,25 +499,6 @@
         let finalImg1Data = null, finalImg2Data = null;
         let pdfDoc1 = null, pdfPage1 = 1, pdfDoc2 = null, pdfPage2 = 1;
         let canOpenCheck = false; 
-
-        // ---------------------------------------------------------
-        // Info Modal (懸浮說明視窗) 邏輯
-        // ---------------------------------------------------------
-        const infoModal = document.getElementById("infoModal");
-        
-        document.getElementById("infoFab").onclick = function() {
-            infoModal.style.display = "block";
-        };
-        
-        document.getElementById("closeInfo").onclick = function() {
-            infoModal.style.display = "none";
-        };
-        
-        window.onclick = function(event) { 
-            if (event.target == infoModal) { 
-                infoModal.style.display = "none"; 
-            } 
-        };
 
         // ---------------------------------------------------------
         // CheckModal (人工手動疊影) 邏輯
@@ -674,7 +577,6 @@
         function openCheckModal(clickedImgId) {
             if (!canOpenCheck || !finalImg1Data || !finalImg2Data) return;
             
-            document.getElementById("infoFab").style.display = 'none'; 
             currentX = 0; 
             currentY = 0; 
             xOffset = 0; 
@@ -700,7 +602,6 @@
 
         function closeCheckModal(fromPopState = false) { 
             checkModal.style.display = 'none'; 
-            document.getElementById("infoFab").style.display = 'flex'; 
             document.body.style.overflow = ''; 
             if (!fromPopState) { 
                 history.back(); 
@@ -844,10 +745,15 @@
             targetCanvas.height = croppedCanvas.height;
             let ctx = targetCanvas.getContext('2d');
             
+            // 先將畫布填滿純白，防止透明 PNG 轉黑
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, targetCanvas.width, targetCanvas.height);
+            
             if (document.getElementById('enhance1').checked) {
                 // 拓印專用反相濾鏡
                 ctx.filter = 'invert(100%) grayscale(100%) contrast(250%) brightness(120%) blur(0.5px)';
             }
+            
             ctx.drawImage(croppedCanvas, 0, 0);
             
             finalImg1Data = targetCanvas.toDataURL('image/jpeg', 0.9); 
@@ -877,10 +783,15 @@
             targetCanvas.height = croppedCanvas.height;
             let ctx = targetCanvas.getContext('2d');
             
+            // 先將畫布填滿純白，防止透明 PNG 轉黑
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, targetCanvas.width, targetCanvas.height);
+            
             if (document.getElementById('enhance2').checked) {
                 // 實體專用除鏽高對比濾鏡
                 ctx.filter = 'grayscale(100%) contrast(180%) brightness(110%)';
             }
+            
             ctx.drawImage(croppedCanvas, 0, 0);
             
             finalImg2Data = targetCanvas.toDataURL('image/jpeg', 0.9); 
@@ -924,6 +835,15 @@
                 
                 const result = await response.json();
                 
+                // 成功攔截後端的自訂報錯，阻止畫面印出 undefined
+                if (result.error) {
+                    alert("⚠️ 系統提示：\n\n" + result.error);
+                    document.getElementById('action-buttons').style.display = 'flex'; 
+                    document.getElementById('loading').style.display = 'none';
+                    return; // 中止後續的畫面更新
+                }
+                
+                // 如果沒有報錯，繼續正常更新畫面
                 document.getElementById('loading').style.display = 'none'; 
                 document.getElementById('result-box').style.display = 'block'; 
                 document.getElementById('resetBtn').style.display = 'block';
