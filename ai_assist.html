@@ -10,77 +10,412 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     
     <style>
-        body { font-family: sans-serif; margin: 0; padding: 15px; background: #f9f9f9; text-align: center; overflow-x: hidden; }
+        /* ================= 基礎排版 ================= */
+        body { 
+            font-family: sans-serif; 
+            margin: 0; 
+            padding: 15px; 
+            background: #f9f9f9; 
+            text-align: center; 
+            overflow-x: hidden; 
+        }
         
-        /* 進度條樣式 */
-        .progress-container { width: 100%; max-width: 400px; margin: 20px auto 30px auto; }
-        .progressbar { counter-reset: step; padding: 0; display: flex; justify-content: space-between; list-style: none; position: relative; margin: 0; z-index: 1; }
-        .progressbar li { list-style-type: none; width: 33.33%; position: relative; text-align: center; font-weight: bold; color: #aaa; font-size: 14px; }
-        .progressbar li:before { content: counter(step); counter-increment: step; width: 30px; height: 30px; line-height: 28px; border: 2px solid #aaa; display: block; text-align: center; margin: 0 auto 10px auto; border-radius: 50%; background-color: #f9f9f9; position: relative; z-index: 2; transition: all 0.3s; }
-        .progressbar li:after { content: ''; position: absolute; width: 100%; height: 3px; background: #aaa; top: 15px; left: -50%; z-index: -1; transition: all 0.3s; }
-        .progressbar li:first-child:after { content: none; }
-        .progressbar li.active { color: #007bff; }
-        .progressbar li.active:before { border-color: #007bff; background-color: #007bff; color: white; }
-        .progressbar li.completed { color: #28a745; }
-        .progressbar li.completed:before { content: '✓'; border-color: #28a745; background-color: #28a745; color: white; }
-        .progressbar li.completed + li:after { background: #28a745; }
+        /* ================= 進度條樣式 ================= */
+        .progress-container { 
+            width: 100%; 
+            max-width: 400px; 
+            margin: 20px auto 30px auto; 
+        }
+        .progressbar { 
+            counter-reset: step; 
+            padding: 0; 
+            display: flex; 
+            justify-content: space-between; 
+            list-style: none; 
+            position: relative; 
+            margin: 0; 
+            z-index: 1; 
+        }
+        .progressbar li { 
+            list-style-type: none; 
+            width: 33.33%; 
+            position: relative; 
+            text-align: center; 
+            font-weight: bold; 
+            color: #aaa; 
+            font-size: 14px; 
+        }
+        .progressbar li:before { 
+            content: counter(step); 
+            counter-increment: step; 
+            width: 30px; 
+            height: 30px; 
+            line-height: 28px; 
+            border: 2px solid #aaa; 
+            display: block; 
+            text-align: center; 
+            margin: 0 auto 10px auto; 
+            border-radius: 50%; 
+            background-color: #f9f9f9; 
+            position: relative; 
+            z-index: 2; 
+            transition: all 0.3s; 
+        }
+        .progressbar li:after { 
+            content: ''; 
+            position: absolute; 
+            width: 100%; 
+            height: 3px; 
+            background: #aaa; 
+            top: 15px; 
+            left: -50%; 
+            z-index: -1; 
+            transition: all 0.3s; 
+        }
+        .progressbar li:first-child:after { 
+            content: none; 
+        }
+        .progressbar li.active { 
+            color: #007bff; 
+        }
+        .progressbar li.active:before { 
+            border-color: #007bff; 
+            background-color: #007bff; 
+            color: white; 
+        }
+        .progressbar li.completed { 
+            color: #28a745; 
+        }
+        .progressbar li.completed:before { 
+            content: '✓'; 
+            border-color: #28a745; 
+            background-color: #28a745; 
+            color: white; 
+        }
+        .progressbar li.completed + li:after { 
+            background: #28a745; 
+        }
         
-        /* 區塊樣式 */
-        .step-container { display: none; margin-top: 10px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .active-step { display: block; animation: fadeIn 0.4s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        /* ================= 區塊樣式 ================= */
+        .step-container { 
+            display: none; 
+            margin-top: 10px; 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+        }
+        .active-step { 
+            display: block; 
+            animation: fadeIn 0.4s; 
+        }
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(5px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
         
-        .img-container { width: 100%; height: 45vh; margin-top: 15px; background: #ddd; overflow: hidden; border-radius: 4px; }
-        .img-container img { display: block; max-width: 100%; } 
+        .img-container { 
+            width: 100%; 
+            height: 45vh; 
+            margin-top: 15px; 
+            background: #ddd; 
+            overflow: hidden; 
+            border-radius: 4px; 
+        }
+        .img-container img { 
+            display: block; 
+            max-width: 100%; 
+        } 
         
-        /* 按鈕樣式 */
-        button { padding: 12px 15px; margin-top: 15px; font-size: 15px; font-weight: bold; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: background 0.2s; }
-        button:active { background: #0056b3; }
-        .btn-secondary { background: #6c757d; }
-        .btn-secondary:active { background: #5a6268; }
-        .btn-action { display: flex; gap: 10px; margin-top: 10px; } 
+        /* ================= 按鈕樣式 ================= */
+        button { 
+            padding: 12px 15px; 
+            margin-top: 15px; 
+            font-size: 15px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 5px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2); 
+            transition: background 0.2s; 
+        }
+        button:active { 
+            background: #0056b3; 
+        }
+        .btn-secondary { 
+            background: #6c757d; 
+        }
+        .btn-secondary:active { 
+            background: #5a6268; 
+        }
+        .btn-action { 
+            display: flex; 
+            gap: 10px; 
+            margin-top: 10px; 
+        } 
         
-        /* 濾鏡選項樣式 */
-        .filter-option { background: #e9ecef; padding: 10px; border-radius: 5px; margin-top: 15px; font-size: 14px; color: #495057; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; border: 1px solid #ced4da; }
-        .filter-option input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+        /* ================= 濾鏡選項樣式 ================= */
+        .filter-option { 
+            background: #e9ecef; 
+            padding: 10px; 
+            border-radius: 5px; 
+            margin-top: 15px; 
+            font-size: 14px; 
+            color: #495057; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 8px; 
+            cursor: pointer; 
+            border: 1px solid #ced4da; 
+        }
+        .filter-option input[type="checkbox"] { 
+            width: 18px; 
+            height: 18px; 
+            cursor: pointer; 
+        }
         
-        /* 上傳檔案按鈕 */
-        input[type="file"] { display: none; }
-        .custom-file-upload { display: inline-block; padding: 12px 24px; cursor: pointer; background-color: #17a2b8; color: white; border-radius: 5px; font-size: 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: background 0.2s; margin-bottom: 5px; width: 80%; max-width: 250px; }
-        .custom-file-upload:active { background-color: #138496; }
-        .file-name-display { font-size: 13px; color: #666; margin-bottom: 10px; word-break: break-all; min-height: 15px; }
+        /* ================= 上傳與檔案資訊 ================= */
+        input[type="file"] { 
+            display: none; 
+        }
+        .custom-file-upload { 
+            display: inline-block; 
+            padding: 12px 24px; 
+            cursor: pointer; 
+            background-color: #17a2b8; 
+            color: white; 
+            border-radius: 5px; 
+            font-size: 16px; 
+            font-weight: bold; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2); 
+            transition: background 0.2s; 
+            margin-bottom: 5px; 
+            width: 80%; 
+            max-width: 250px; 
+        }
+        .custom-file-upload:active { 
+            background-color: #138496; 
+        }
+        .file-name-display { 
+            font-size: 13px; 
+            color: #666; 
+            margin-bottom: 10px; 
+            word-break: break-all; 
+            min-height: 15px; 
+        }
         
-        /* PDF 控制列 */
-        .pdf-controls { display: none; justify-content: center; align-items: center; gap: 15px; margin-top: 10px; background: #f1f3f5; padding: 10px; border-radius: 5px; }
-        .pdf-controls button { margin: 0; padding: 6px 12px; font-size: 14px; background: #495057; }
+        /* ================= PDF 控制列 ================= */
+        .pdf-controls { 
+            display: none; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 15px; 
+            margin-top: 10px; 
+            background: #f1f3f5; 
+            padding: 10px; 
+            border-radius: 5px; 
+        }
+        .pdf-controls button { 
+            margin: 0; 
+            padding: 6px 12px; 
+            font-size: 14px; 
+            background: #495057; 
+        }
         
-        /* 預覽圖與結果報告 */
-        .preview-box { width: 120px; height: 120px; border: 1px solid #ccc; margin: 10px auto; object-fit: contain; background: white; border-radius: 4px; cursor: pointer; transition: transform 0.2s; }
-        .preview-box:active { transform: scale(0.95); } 
-        #result-box { margin-top: 20px; padding: 15px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: left; }
-        .stars { color: #f39c12; font-size: 36px; font-weight: bold; margin: 10px 0; text-align: center; }
-        #loading { display: none; color: #007bff; font-weight: bold; margin-top: 20px; font-size: 16px; }
+        /* ================= 預覽圖與結果報告 ================= */
+        .preview-box { 
+            width: 120px; 
+            height: 120px; 
+            border: 1px solid #ccc; 
+            margin: 10px auto; 
+            object-fit: contain; 
+            background: white; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            transition: transform 0.2s; 
+        }
+        .preview-box:active { 
+            transform: scale(0.95); 
+        } 
+        #result-box { 
+            margin-top: 20px; 
+            padding: 15px; 
+            background: #fff; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+            text-align: left; 
+        }
+        .stars { 
+            color: #f39c12; 
+            font-size: 36px; 
+            font-weight: bold; 
+            margin: 10px 0; 
+            text-align: center; 
+        }
+        #loading { 
+            display: none; 
+            color: #007bff; 
+            font-weight: bold; 
+            margin-top: 20px; 
+            font-size: 16px; 
+        }
         
-        /* 懸浮按鈕 (FAB) */
-        .fab { position: fixed; bottom: 25px; right: 25px; width: 55px; height: 55px; border-radius: 50%; background-color: #17a2b8; color: white; font-size: 26px; border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; z-index: 999; display: flex; justify-content: center; align-items: center; }
-        .fab:active { transform: scale(0.9); background-color: #138496; }
+        /* ================= 懸浮按鈕 (FAB) ================= */
+        .fab { 
+            position: fixed; 
+            bottom: 25px; 
+            right: 25px; 
+            width: 55px; 
+            height: 55px; 
+            border-radius: 50%; 
+            background-color: #17a2b8; 
+            color: white; 
+            font-size: 26px; 
+            border: none; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
+            cursor: pointer; 
+            z-index: 999; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+        }
+        .fab:active { 
+            transform: scale(0.9); 
+            background-color: #138496; 
+        }
         
-        /* 說明視窗 (Modal) */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(2px); overflow-y: auto; }
-        .modal-content { background-color: #fefefe; margin: 5vh auto; padding: 25px; border-radius: 12px; width: 85%; max-width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; line-height: 1.6; text-align: left; }
-        .close-modal { position: absolute; right: 15px; top: 10px; color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
-
-        /* 人工手動疊影比對視窗 (CheckModal) */
-        #checkModal { display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100vw; height: 100vh; background-color: #222; overflow: hidden; touch-action: none; }
-        #check-container { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        .check-base { max-width: 90vw; max-height: 80vh; object-fit: contain; pointer-events: none; user-select: none; z-index: 1; border: 2px solid #555; }
-        .check-overlay { position: absolute; top: 50%; left: 50%; max-width: 90vw; max-height: 80vh; object-fit: contain; opacity: 0.5; z-index: 2; transform-origin: center center; transform: translate(-50%, -50%) scale(1) rotate(0deg); pointer-events: none; border: 2px dashed rgba(255, 255, 255, 0.6); }
-        #check-controls { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0, 0, 0, 0.8); padding: 15px; box-sizing: border-box; z-index: 10; display: flex; flex-direction: column; gap: 10px; }
-        .check-control-group { display: flex; align-items: center; justify-content: space-between; color: white; }
-        .check-control-group label { width: 60px; font-size: 14px; }
-        .check-control-group input[type="range"] { flex-grow: 1; margin: 0 10px; }
-        #topCloseCheckBtn { position: absolute; top: 15px; right: 15px; width: 40px; height: 40px; background: rgba(255,255,255,0.2); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; z-index: 20; border: 1px solid rgba(255,255,255,0.4); cursor: pointer; }
-        #topCloseCheckBtn:active { background: rgba(255,255,255,0.4); transform: scale(0.9); }
+        /* ================= 說明視窗 (Modal) ================= */
+        .modal { 
+            display: none; 
+            position: fixed; 
+            z-index: 1000; 
+            left: 0; 
+            top: 0; 
+            width: 100%; 
+            height: 100%; 
+            background-color: rgba(0,0,0,0.6); 
+            backdrop-filter: blur(2px); 
+            overflow-y: auto; 
+        }
+        .modal-content { 
+            background-color: #fefefe; 
+            margin: 5vh auto; 
+            padding: 25px; 
+            border-radius: 12px; 
+            width: 85%; 
+            max-width: 400px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); 
+            position: relative; 
+            line-height: 1.6; 
+            text-align: left; 
+        }
+        .close-modal { 
+            position: absolute; 
+            right: 15px; 
+            top: 10px; 
+            color: #aaa; 
+            font-size: 28px; 
+            font-weight: bold; 
+            cursor: pointer; 
+        }
+        
+        /* ================= 人工疊影比對視窗 (CheckModal) ================= */
+        #checkModal { 
+            display: none; 
+            position: fixed; 
+            z-index: 1001; 
+            left: 0; 
+            top: 0; 
+            width: 100vw; 
+            height: 100vh; 
+            background-color: #222; 
+            overflow: hidden; 
+            touch-action: none; 
+        }
+        #check-container { 
+            position: relative; 
+            width: 100%; 
+            height: 100%; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            overflow: hidden; 
+        }
+        .check-base { 
+            max-width: 90vw; 
+            max-height: 80vh; 
+            object-fit: contain; 
+            pointer-events: none; 
+            user-select: none; 
+            z-index: 1; 
+            border: 2px solid #555; 
+        }
+        .check-overlay { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            max-width: 90vw; 
+            max-height: 80vh; 
+            object-fit: contain; 
+            opacity: 0.5; 
+            z-index: 2; 
+            transform-origin: center center; 
+            transform: translate(-50%, -50%) scale(1) rotate(0deg); 
+            pointer-events: none; 
+            border: 2px dashed rgba(255, 255, 255, 0.6); 
+        }
+        #check-controls { 
+            position: absolute; 
+            bottom: 0; 
+            left: 0; 
+            width: 100%; 
+            background: rgba(0, 0, 0, 0.8); 
+            padding: 15px; 
+            box-sizing: border-box; 
+            z-index: 10; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+        }
+        .check-control-group { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            color: white; 
+        }
+        .check-control-group label { 
+            width: 60px; 
+            font-size: 14px; 
+        }
+        .check-control-group input[type="range"] { 
+            flex-grow: 1; 
+            margin: 0 10px; 
+        }
+        #topCloseCheckBtn { 
+            position: absolute; 
+            top: 15px; 
+            right: 15px; 
+            width: 40px; 
+            height: 40px; 
+            background: rgba(255,255,255,0.2); 
+            color: white; 
+            border-radius: 50%; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            font-size: 24px; 
+            font-weight: bold; 
+            z-index: 20; 
+            border: 1px solid rgba(255,255,255,0.4); 
+            cursor: pointer; 
+        }
+        #topCloseCheckBtn:active { 
+            background: rgba(255,255,255,0.4); 
+            transform: scale(0.9); 
+        }
     </style>
 </head>
 <body>
@@ -106,10 +441,12 @@
             <span id="page-info-1">第 1 頁</span>
             <button id="next-page-1">下一頁</button>
         </div>
-        <div class="img-container"><img id="image1" src=""></div>
+        <div class="img-container">
+            <img id="image1" src="">
+        </div>
         
-        <label class="filter-option" style="display:none;" id="filterOpt1">
-            <input type="checkbox" id="enhance1"> ✨ 啟用高對比強化濾鏡 (除鏽去色)
+        <label class="filter-option" style="display:none; background: #fff3cd; border-color: #ffecb5; color: #664d03;" id="filterOpt1">
+            <input type="checkbox" id="enhance1"> 🪄 啟用拓印專用：反相(負片)與去雜訊濾鏡
         </label>
         
         <div class="btn-action">
@@ -129,10 +466,12 @@
             <span id="page-info-2">第 1 頁</span>
             <button id="next-page-2">下一頁</button>
         </div>
-        <div class="img-container"><img id="image2" src=""></div>
+        <div class="img-container">
+            <img id="image2" src="">
+        </div>
         
         <label class="filter-option" style="display:none;" id="filterOpt2">
-            <input type="checkbox" id="enhance2"> ✨ 啟用高對比強化濾鏡 (除鏽去色)
+            <input type="checkbox" id="enhance2"> ✨ 啟用實體專用：除鏽去色與高對比濾鏡
         </label>
 
         <div class="btn-action">
@@ -156,7 +495,9 @@
                 <img id="preview2" class="preview-box">
             </div>
         </div>
-        <div style="font-size: 12px; color: #888; margin-top: 5px;">(若有勾選強化濾鏡，預覽圖會自動轉換為黑白高對比。<br>比對完成後，可點擊照片進行疊影覆核)</div>
+        <div style="font-size: 12px; color: #888; margin-top: 5px;">
+            (若有勾選強化濾鏡，預覽圖會自動轉換為黑白高對比。<br>比對完成後，可點擊照片進行疊影覆核)
+        </div>
 
         <div style="display: flex; margin-top: 20px; gap: 10px;" id="action-buttons">
             <button id="backBtn2" class="btn-secondary" style="flex: 1;">回上一步</button>
@@ -167,8 +508,20 @@
         <div id="result-box" style="display:none;">
             <div id="star-rating" class="stars"></div>
             <h3 id="geo-status-text" style="color: #dc3545; text-align: center; margin-top: 0; margin-bottom: 20px;"></h3>
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 5px solid #007bff; margin-bottom: 15px;"><h4 style="margin-top: 0; color: #007bff; display: flex; align-items: center;"><span style="font-size: 20px; margin-right: 8px;">📐</span> OCR 幾何運算報告</h4><p id="geo-explanation-text" style="line-height: 1.6; color: #555; font-family: monospace; white-space: pre-line; margin-bottom: 0;"></p></div>
-            <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 5px solid #ffc107;"><h4 style="margin-top: 0; color: #d39e00; display: flex; align-items: center;"><span style="font-size: 20px; margin-right: 8px;">👁️</span> AI 外觀特徵輔助觀察</h4><p id="ai-explanation-text" style="line-height: 1.6; color: #664d03; margin-bottom: 0;"></p></div>
+            
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 5px solid #007bff; margin-bottom: 15px;">
+                <h4 style="margin-top: 0; color: #007bff; display: flex; align-items: center;">
+                    <span style="font-size: 20px; margin-right: 8px;">📐</span> OCR 幾何運算報告
+                </h4>
+                <p id="geo-explanation-text" style="line-height: 1.6; color: #555; font-family: monospace; white-space: pre-line; margin-bottom: 0;"></p>
+            </div>
+            
+            <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 5px solid #ffc107;">
+                <h4 style="margin-top: 0; color: #d39e00; display: flex; align-items: center;">
+                    <span style="font-size: 20px; margin-right: 8px;">👁️</span> AI 外觀特徵輔助觀察
+                </h4>
+                <p id="ai-explanation-text" style="line-height: 1.6; color: #664d03; margin-bottom: 0;"></p>
+            </div>
         </div>
         <button id="resetBtn" style="display:none; width: 100%; background: #28a745; margin-top: 15px;" onclick="location.replace('index.html')">回首頁 (檢視紀錄)</button>
     </div>
@@ -185,24 +538,21 @@
                 <li><b>嚴禁正面閃光燈：</b>正面強光會吃掉金屬凹槽的陰影，讓鋼印瞬間「隱形」。</li>
             </ul>
             
-            <h4 style="color: #d35400; margin-bottom: 5px;">🔥 現場拍攝秘技 (搶救生鏽件)</h4>
+            <h4 style="color: #d35400; margin-bottom: 5px;">🔥 現場拍攝與拓印秘技</h4>
             <ul style="color: #444; font-size: 14px; padding-left: 20px; margin-top: 0;">
-                <li style="margin-bottom: 8px;"><b>斜角打光法：</b>請用另一支手電筒從側邊 30°~45° 打光，製造鋼印凹槽陰影，辨識率會大幅提升。</li>
-                <li><b>粉筆補強法：</b>遇嚴重生鏽，可用白色粉筆塗抹鋼印後擦去表面，製造完美黑白對比。</li>
-            </ul>
-
-            <h4 style="color: #28a745; margin-bottom: 5px;">💻 軟體系統機制解密</h4>
-            <ul style="color: #444; font-size: 14px; padding-left: 20px; margin-top: 0;">
-                <li style="margin-bottom: 8px;"><b>關於旋轉 90°：</b>若照片呈現垂直，AI 無法由左至右配對，請將影像轉為「橫向」。</li>
-                <li style="margin-bottom: 8px;"><b>關於相機歪斜：</b>只要整體呈橫向，相機傾斜 10°～20° 系統皆會自動「拉平校正」。</li>
-                <li><b>關於 AI 濾鏡：</b>若原圖太灰暗，勾選「✨ 強化濾鏡」，系統會自動去色並加深對比。</li>
+                <li style="margin-bottom: 8px;"><b>斜角打光法 (實體)：</b>請用手電筒從側邊 30°~45° 打光，製造鋼印凹槽陰影。</li>
+                <li style="margin-bottom: 8px;"><b>粉筆補強法 (實體)：</b>遇嚴重生鏽，用白色粉筆塗抹鋼印後擦去表面，製造黑白對比。</li>
+                <li><b>拓印字體不清：</b>若拓印底色太黑、字體不清楚，請務必勾選<b>「🪄 拓印專用：反相與去雜訊濾鏡」</b>，系統會自動將黑白顛倒，大幅提升 AI 認字率。</li>
             </ul>
         </div>
     </div>
 
     <div id="checkModal">
         <div id="topCloseCheckBtn">&times;</div>
-        <div id="check-container"><img id="checkBaseImg" class="check-base" src=""><img id="checkOverlayImg" class="check-overlay" src=""></div>
+        <div id="check-container">
+            <img id="checkBaseImg" class="check-base" src="">
+            <img id="checkOverlayImg" class="check-overlay" src="">
+        </div>
         <div id="check-controls">
             <div class="check-control-group">
                 <label>透明度:</label>
@@ -214,12 +564,11 @@
         </div>
     </div>
 
-
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
         
         // =========================================================
-        // ★★★ 請將你的 GAS Web App URL 貼在下方引號內 ★★★
+        // ★★★ 請將您的 GAS Web App URL 貼在下方引號內 ★★★
         // =========================================================
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbycbiOxbx9T4ynci32AWE46a-B42N_MaIQUBmwvsuzj3WiJ5_dHEL3Z_qw3cv8nkGZkAw/exec"; 
         // =========================================================
@@ -230,18 +579,26 @@
         let canOpenCheck = false; 
 
         // ---------------------------------------------------------
-        // Info Modal (懸浮說明視窗)
+        // Info Modal (懸浮說明視窗) 邏輯
         // ---------------------------------------------------------
         const infoModal = document.getElementById("infoModal");
-        document.getElementById("infoFab").onclick = () => {
+        
+        document.getElementById("infoFab").onclick = function() {
             infoModal.style.display = "block";
         };
-        document.getElementById("closeInfo").onclick = () => {
+        
+        document.getElementById("closeInfo").onclick = function() {
             infoModal.style.display = "none";
+        };
+        
+        window.onclick = function(event) { 
+            if (event.target == infoModal) { 
+                infoModal.style.display = "none"; 
+            } 
         };
 
         // ---------------------------------------------------------
-        // CheckModal 邏輯 (人工手動疊影)
+        // CheckModal (人工手動疊影) 邏輯
         // ---------------------------------------------------------
         const checkModal = document.getElementById('checkModal');
         const checkBaseImg = document.getElementById('checkBaseImg');
@@ -249,19 +606,24 @@
         const checkContainer = document.getElementById('check-container');
         const checkOpacitySlider = document.getElementById('checkOpacitySlider');
 
-        let isDragging = false, startX, startY, currentX = 0, currentY = 0, xOffset = 0, yOffset = 0;
-        let currentScale = 1, currentRotation = 0, initialPinchDistance = null, initialPinchScale = 1;
+        let isDragging = false, startX, startY;
+        let currentX = 0, currentY = 0, xOffset = 0, yOffset = 0;
+        let currentScale = 1, currentRotation = 0;
+        let initialPinchDistance = null, initialPinchScale = 1;
         let initialTouchAngle = null, initialElementRotation = 0;
 
         function updateOverlayTransform() { 
             checkOverlayImg.style.transform = `translate(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px)) scale(${currentScale}) rotate(${currentRotation}deg)`; 
         }
+        
         function getDistance(touches) { 
             return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY); 
         }
+        
         function getAngle(touches) { 
             return Math.atan2(touches[0].clientY - touches[1].clientY, touches[0].clientX - touches[1].clientX); 
         }
+        
         function radToDeg(rad) { 
             return rad * (180 / Math.PI); 
         }
@@ -311,9 +673,14 @@
 
         function openCheckModal(clickedImgId) {
             if (!canOpenCheck || !finalImg1Data || !finalImg2Data) return;
+            
             document.getElementById("infoFab").style.display = 'none'; 
-            currentX = 0; currentY = 0; xOffset = 0; yOffset = 0; 
-            currentScale = 1; currentRotation = 0; 
+            currentX = 0; 
+            currentY = 0; 
+            xOffset = 0; 
+            yOffset = 0; 
+            currentScale = 1; 
+            currentRotation = 0; 
             checkOpacitySlider.value = 0.5; 
             checkOverlayImg.style.opacity = 0.5; 
             updateOverlayTransform();
@@ -346,25 +713,27 @@
             } 
         });
 
-        document.getElementById('preview1').addEventListener('click', () => openCheckModal('preview1'));
-        document.getElementById('preview2').addEventListener('click', () => openCheckModal('preview2'));
-        document.getElementById('closeCheckBtn').addEventListener('click', () => closeCheckModal(false));
-        document.getElementById('topCloseCheckBtn').addEventListener('click', () => closeCheckModal(false));
+        document.getElementById('preview1').addEventListener('click', function() { openCheckModal('preview1'); });
+        document.getElementById('preview2').addEventListener('click', function() { openCheckModal('preview2'); });
+        document.getElementById('closeCheckBtn').addEventListener('click', function() { closeCheckModal(false); });
+        document.getElementById('topCloseCheckBtn').addEventListener('click', function() { closeCheckModal(false); });
         
         checkOpacitySlider.addEventListener('input', function() { 
             checkOverlayImg.style.opacity = this.value; 
             document.getElementById('checkOpacityVal').innerText = Math.round(this.value * 100) + '%'; 
         });
 
-
         // ---------------------------------------------------------
-        // 介面流程控制與檔案讀取
+        // 介面流程控制與 PDF/檔案讀取邏輯
         // ---------------------------------------------------------
         function updateProgress(step) { 
-            document.querySelectorAll('.progressbar li').forEach((li, index) => { 
+            document.querySelectorAll('.progressbar li').forEach(function(li, index) { 
                 li.className = ''; 
-                if (index + 1 < step) li.classList.add('completed'); 
-                else if (index + 1 === step) li.classList.add('active'); 
+                if (index + 1 < step) {
+                    li.classList.add('completed'); 
+                } else if (index + 1 === step) {
+                    li.classList.add('active'); 
+                }
             }); 
         }
 
@@ -390,7 +759,7 @@
             
             await page.render({ canvasContext: context, viewport: viewport }).promise; 
             
-            imgElement.onload = () => { 
+            imgElement.onload = function() { 
                 if (stepNum === 1) { 
                     if (cropper1) cropper1.destroy(); 
                     cropper1 = new Cropper(imgElement, { viewMode: 1, autoCropArea: 0.8 }); 
@@ -421,10 +790,12 @@
                         document.getElementById(`pdf-controls-${stepNum}`).style.display = 'flex'; 
                         
                         if (stepNum === 1) { 
-                            pdfDoc1 = pdf; pdfPage1 = 1; 
+                            pdfDoc1 = pdf; 
+                            pdfPage1 = 1; 
                             renderPdfPage(pdfDoc1, pdfPage1, imgElement, 1); 
                         } else { 
-                            pdfDoc2 = pdf; pdfPage2 = 1; 
+                            pdfDoc2 = pdf; 
+                            pdfPage2 = 1; 
                             renderPdfPage(pdfDoc2, pdfPage2, imgElement, 2); 
                         } 
                     } catch (error) { 
@@ -434,8 +805,8 @@
                 fileReader.readAsArrayBuffer(file); 
             } else { 
                 const reader = new FileReader(); 
-                reader.onload = (e) => { 
-                    imgElement.onload = () => { 
+                reader.onload = function(e) { 
+                    imgElement.onload = function() { 
                         if (stepNum === 1) { 
                             if (cropper1) cropper1.destroy(); 
                             cropper1 = new Cropper(imgElement, { viewMode: 1, autoCropArea: 0.8 }); 
@@ -452,19 +823,19 @@
         }
 
         // ---------------------------------------------------------
-        // 按鈕事件綁定與 Canvas 濾鏡處理
+        // 綁定前端按鈕事件與 Canvas 濾鏡
         // ---------------------------------------------------------
         
-        // 步驟 1 事件
+        // 步驟 1 事件綁定
         document.getElementById('file1').addEventListener('change', function(e) { 
             processFile(e.target.files[0], document.getElementById('image1'), 1, document.getElementById('filename1')); 
         });
         
-        document.getElementById('rotateBtn1').addEventListener('click', () => { 
+        document.getElementById('rotateBtn1').addEventListener('click', function() { 
             if(cropper1) cropper1.rotate(90); 
         });
         
-        document.getElementById('cropBtn1').addEventListener('click', () => { 
+        document.getElementById('cropBtn1').addEventListener('click', function() { 
             if (!cropper1) return; 
             
             let croppedCanvas = cropper1.getCroppedCanvas();
@@ -473,9 +844,9 @@
             targetCanvas.height = croppedCanvas.height;
             let ctx = targetCanvas.getContext('2d');
             
-            // 濾鏡處理
             if (document.getElementById('enhance1').checked) {
-                ctx.filter = 'grayscale(100%) contrast(180%) brightness(110%)';
+                // 拓印專用反相濾鏡
+                ctx.filter = 'invert(100%) grayscale(100%) contrast(250%) brightness(120%) blur(0.5px)';
             }
             ctx.drawImage(croppedCanvas, 0, 0);
             
@@ -484,18 +855,20 @@
             switchStep(1, 2); 
         });
 
-        // 步驟 2 事件
+        // 步驟 2 事件綁定
         document.getElementById('file2').addEventListener('change', function(e) { 
             processFile(e.target.files[0], document.getElementById('image2'), 2, document.getElementById('filename2')); 
         });
         
-        document.getElementById('backBtn1').addEventListener('click', () => switchStep(2, 1));
+        document.getElementById('backBtn1').addEventListener('click', function() { 
+            switchStep(2, 1); 
+        });
         
-        document.getElementById('rotateBtn2').addEventListener('click', () => { 
+        document.getElementById('rotateBtn2').addEventListener('click', function() { 
             if(cropper2) cropper2.rotate(90); 
         });
         
-        document.getElementById('cropBtn2').addEventListener('click', () => { 
+        document.getElementById('cropBtn2').addEventListener('click', function() { 
             if (!cropper2) return; 
             
             let croppedCanvas = cropper2.getCroppedCanvas();
@@ -504,8 +877,8 @@
             targetCanvas.height = croppedCanvas.height;
             let ctx = targetCanvas.getContext('2d');
             
-            // 濾鏡處理
             if (document.getElementById('enhance2').checked) {
+                // 實體專用除鏽高對比濾鏡
                 ctx.filter = 'grayscale(100%) contrast(180%) brightness(110%)';
             }
             ctx.drawImage(croppedCanvas, 0, 0);
@@ -515,12 +888,13 @@
             switchStep(2, 3); 
         });
         
-        // 步驟 3 事件
-        document.getElementById('backBtn2').addEventListener('click', () => switchStep(3, 2));
-
+        // 步驟 3 事件綁定
+        document.getElementById('backBtn2').addEventListener('click', function() { 
+            switchStep(3, 2); 
+        });
 
         // ---------------------------------------------------------
-        // API 呼叫與 LocalStorage 存檔
+        // API 呼叫與本機儲存邏輯
         // ---------------------------------------------------------
         function generateThumbnail(imgElement) { 
             const canvas = document.createElement('canvas'); 
@@ -532,7 +906,7 @@
             return canvas.toDataURL('image/jpeg', 0.6); 
         }
 
-        document.getElementById('submitBtn').addEventListener('click', async () => {
+        document.getElementById('submitBtn').addEventListener('click', async function() {
             if (!GAS_API_URL.startsWith("http")) { 
                 alert("請先在程式碼最下方填入您的 GAS_API_URL！"); 
                 return; 
@@ -580,7 +954,9 @@
                         thumb2: thumb2 
                     });
                     
-                    if (historyData.length > 15) historyData.pop(); 
+                    if (historyData.length > 15) {
+                        historyData.pop(); 
+                    }
                     localStorage.setItem('stamp_history', JSON.stringify(historyData));
                 } catch (e) { 
                     console.error("本機存檔失敗", e); 
