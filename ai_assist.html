@@ -114,18 +114,27 @@
             to { opacity: 1; transform: translateY(0); } 
         }
         
+        /* ★ 修改：優化圖片容器，適應橫向照片 */
         .img-container { 
             width: 100%; 
-            height: 45vh; 
+            height: 50vh; /* 稍微加高 */
+            min-height: 300px; /* 確保不會太扁 */
             margin-top: 15px; 
-            background: #ddd; 
+            background: #e9ecef; /* 改為更柔和的背景色 */
             overflow: hidden; 
             border-radius: 4px; 
+            border: 1px solid #ced4da;
         }
         .img-container img { 
             display: block; 
             max-width: 100%; 
         } 
+        .crop-hint {
+            font-size: 13px;
+            color: #6c757d;
+            margin-top: 8px;
+            font-weight: bold;
+        }
         
         /* ================= 按鈕樣式 ================= */
         button { 
@@ -382,9 +391,11 @@
             <span id="page-info-1">第 1 頁</span>
             <button id="next-page-1">下一頁</button>
         </div>
+        
         <div class="img-container">
             <img id="image1" src="">
         </div>
+        <div class="crop-hint" id="hint1" style="display:none;">👆 單指可拖曳照片，雙指可縮放大小</div>
         
         <label class="filter-option" style="display:none; background: #fff3cd; border-color: #ffecb5; color: #664d03;" id="filterOpt1">
             <input type="checkbox" id="enhance1"> 🪄 啟用拓印專用：反相(負片)與去雜訊濾鏡
@@ -407,9 +418,11 @@
             <span id="page-info-2">第 1 頁</span>
             <button id="next-page-2">下一頁</button>
         </div>
+        
         <div class="img-container">
             <img id="image2" src="">
         </div>
+        <div class="crop-hint" id="hint2" style="display:none;">👆 單指可拖曳照片，雙指可縮放大小</div>
         
         <label class="filter-option" style="display:none;" id="filterOpt2">
             <input type="checkbox" id="enhance2"> ✨ 啟用實體專用：除鏽去色與高對比濾鏡
@@ -499,6 +512,17 @@
         let finalImg1Data = null, finalImg2Data = null;
         let pdfDoc1 = null, pdfPage1 = 1, pdfDoc2 = null, pdfPage2 = 1;
         let canOpenCheck = false; 
+
+        // ★ 定義手機友善的 Cropper 選項 (改為 dragMode: 'move')
+        const cropperOptions = {
+            viewMode: 1,
+            dragMode: 'move', // 關鍵：單指拖曳圖片，雙指縮放
+            autoCropArea: 0.8,
+            responsive: true,
+            background: true,
+            guides: true,
+            center: true
+        };
 
         // ---------------------------------------------------------
         // CheckModal (人工手動疊影) 邏輯
@@ -648,6 +672,7 @@
             document.getElementById(`cropBtn${stepNum}`).style.display = 'inline-block'; 
             document.getElementById(`rotateBtn${stepNum}`).style.display = 'inline-block'; 
             document.getElementById(`filterOpt${stepNum}`).style.display = 'flex'; 
+            document.getElementById(`hint${stepNum}`).style.display = 'block'; // 顯示拖曳提示
         }
 
         async function renderPdfPage(pdfDoc, pageNum, imgElement, stepNum) { 
@@ -663,10 +688,10 @@
             imgElement.onload = function() { 
                 if (stepNum === 1) { 
                     if (cropper1) cropper1.destroy(); 
-                    cropper1 = new Cropper(imgElement, { viewMode: 1, autoCropArea: 0.8 }); 
+                    cropper1 = new Cropper(imgElement, cropperOptions); 
                 } else { 
                     if (cropper2) cropper2.destroy(); 
-                    cropper2 = new Cropper(imgElement, { viewMode: 1, autoCropArea: 0.8 }); 
+                    cropper2 = new Cropper(imgElement, cropperOptions); 
                 } 
                 showButtons(stepNum); 
             }; 
@@ -710,10 +735,10 @@
                     imgElement.onload = function() { 
                         if (stepNum === 1) { 
                             if (cropper1) cropper1.destroy(); 
-                            cropper1 = new Cropper(imgElement, { viewMode: 1, autoCropArea: 0.8 }); 
+                            cropper1 = new Cropper(imgElement, cropperOptions); 
                         } else { 
                             if (cropper2) cropper2.destroy(); 
-                            cropper2 = new Cropper(imgElement, { viewMode: 1, autoCropArea: 0.8 }); 
+                            cropper2 = new Cropper(imgElement, cropperOptions); 
                         } 
                         showButtons(stepNum); 
                     }; 
@@ -727,11 +752,25 @@
         // 綁定前端按鈕事件與 Canvas 濾鏡
         // ---------------------------------------------------------
         
-        // 步驟 1 事件綁定
+        // ================= 步驟 1 事件綁定 =================
         document.getElementById('file1').addEventListener('change', function(e) { 
             processFile(e.target.files[0], document.getElementById('image1'), 1, document.getElementById('filename1')); 
         });
         
+        document.getElementById('prev-page-1').addEventListener('click', function() { 
+            if(pdfPage1 > 1) { 
+                pdfPage1--; 
+                renderPdfPage(pdfDoc1, pdfPage1, document.getElementById('image1'), 1); 
+            }
+        });
+        
+        document.getElementById('next-page-1').addEventListener('click', function() { 
+            if(pdfPage1 < pdfDoc1.numPages) { 
+                pdfPage1++; 
+                renderPdfPage(pdfDoc1, pdfPage1, document.getElementById('image1'), 1); 
+            }
+        });
+
         document.getElementById('rotateBtn1').addEventListener('click', function() { 
             if(cropper1) cropper1.rotate(90); 
         });
@@ -761,11 +800,25 @@
             switchStep(1, 2); 
         });
 
-        // 步驟 2 事件綁定
+        // ================= 步驟 2 事件綁定 =================
         document.getElementById('file2').addEventListener('change', function(e) { 
             processFile(e.target.files[0], document.getElementById('image2'), 2, document.getElementById('filename2')); 
         });
         
+        document.getElementById('prev-page-2').addEventListener('click', function() { 
+            if(pdfPage2 > 1) { 
+                pdfPage2--; 
+                renderPdfPage(pdfDoc2, pdfPage2, document.getElementById('image2'), 2); 
+            }
+        });
+        
+        document.getElementById('next-page-2').addEventListener('click', function() { 
+            if(pdfPage2 < pdfDoc2.numPages) { 
+                pdfPage2++; 
+                renderPdfPage(pdfDoc2, pdfPage2, document.getElementById('image2'), 2); 
+            }
+        });
+
         document.getElementById('backBtn1').addEventListener('click', function() { 
             switchStep(2, 1); 
         });
@@ -799,7 +852,7 @@
             switchStep(2, 3); 
         });
         
-        // 步驟 3 事件綁定
+        // ================= 步驟 3 事件綁定 =================
         document.getElementById('backBtn2').addEventListener('click', function() { 
             switchStep(3, 2); 
         });
