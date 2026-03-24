@@ -48,6 +48,13 @@
         .custom-file-upload:active { background-color: #138496; }
         .file-name-display { font-size: 13px; color: #666; margin-bottom: 10px; word-break: break-all; min-height: 15px; }
         
+        /* ================= 濾鏡選項樣式 (測試專用) ================= */
+        .filter-group { background: #e9ecef; padding: 15px; border-radius: 5px; margin-top: 15px; text-align: left; border: 1px solid #ced4da; display: none; }
+        .filter-group p { margin: 0 0 10px 0; font-size: 15px; font-weight: bold; color: #495057; display: flex; align-items: center; }
+        .filter-group label { display: block; margin-bottom: 8px; font-size: 14px; cursor: pointer; color: #333; }
+        .filter-group label:last-child { margin-bottom: 0; }
+        .filter-group input[type="radio"] { margin-right: 8px; cursor: pointer; transform: scale(1.2); }
+
         /* ================= PDF 控制列 ================= */
         .pdf-controls { display: none; justify-content: center; align-items: center; gap: 15px; margin-top: 10px; background: #f1f3f5; padding: 10px; border-radius: 5px; }
         .pdf-controls button { margin: 0; padding: 6px 12px; font-size: 14px; background: #495057; }
@@ -66,7 +73,7 @@
         .fab { position: fixed; bottom: 25px; right: 25px; width: 55px; height: 55px; border-radius: 50%; background-color: #17a2b8; color: white; font-size: 26px; border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; z-index: 999; display: flex; justify-content: center; align-items: center; }
         .fab:active { transform: scale(0.9); background-color: #138496; }
 
-        /* ================= 人工手動疊影比對視窗 (CheckModal) ================= */
+        /* ================= 人工手動疊影比對視窗 ================= */
         #checkModal { display: none; position: fixed; z-index: 1001; left: 0; top: 0; width: 100vw; height: 100vh; background-color: #222; overflow: hidden; touch-action: none; }
         #check-container { position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; overflow: hidden; }
         .check-base { max-width: 90vw; max-height: 80vh; object-fit: contain; pointer-events: none; user-select: none; z-index: 1; border: 2px solid #555; }
@@ -76,7 +83,6 @@
         .check-control-group label { width: 60px; font-size: 14px; }
         .check-control-group input[type="range"] { flex-grow: 1; margin: 0 10px; }
         #topCloseCheckBtn { position: absolute; top: 15px; right: 15px; width: 40px; height: 40px; background: rgba(255,255,255,0.2); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold; z-index: 20; border: 1px solid rgba(255,255,255,0.4); cursor: pointer; }
-        #topCloseCheckBtn:active { background: rgba(255,255,255,0.4); transform: scale(0.9); }
     </style>
 </head>
 <body>
@@ -98,15 +104,19 @@
         <div id="filename1" class="file-name-display">尚未選擇任何檔案</div>
         
         <div id="pdf-controls-1" class="pdf-controls">
-            <button id="prev-page-1">上一頁</button>
-            <span id="page-info-1">第 1 頁</span>
-            <button id="next-page-1">下一頁</button>
+            <button id="prev-page-1">上一頁</button><span id="page-info-1">第 1 頁</span><button id="next-page-1">下一頁</button>
         </div>
         
         <div class="img-container">
             <img id="image1" src="">
         </div>
         <div class="crop-hint" id="hint1" style="display:none;">👆 單指可拖曳照片，雙指可縮放大小</div>
+        
+        <div id="filterOpt1" class="filter-group">
+            <p>🪄 拓印處理模式：</p>
+            <label><input type="radio" name="mode1" value="auto" checked> 預設強化 (反相去噪)</label>
+            <label><input type="radio" name="mode1" value="none"> 原圖模式 (不處理)</label>
+        </div>
         
         <div class="btn-action">
             <button id="rotateBtn1" class="btn-secondary" style="display:none; flex: 1;">↻ 旋轉 90°</button>
@@ -121,9 +131,7 @@
         <div id="filename2" class="file-name-display">尚未選擇任何檔案</div>
         
         <div id="pdf-controls-2" class="pdf-controls">
-            <button id="prev-page-2">上一頁</button>
-            <span id="page-info-2">第 1 頁</span>
-            <button id="next-page-2">下一頁</button>
+            <button id="prev-page-2">上一頁</button><span id="page-info-2">第 1 頁</span><button id="next-page-2">下一頁</button>
         </div>
         
         <div class="img-container">
@@ -131,6 +139,13 @@
         </div>
         <div class="crop-hint" id="hint2" style="display:none;">👆 單指可拖曳照片，雙指可縮放大小</div>
         
+        <div id="filterOpt2" class="filter-group">
+            <p>✨ 實體照片處理模式：</p>
+            <label><input type="radio" name="mode2" value="auto" checked> 預設強化 (去色高對比)</label>
+            <label style="color: #d35400;"><input type="radio" name="mode2" value="pixel"> 實驗：抗鏽蝕二值化 (消滅鐵鏽)</label>
+            <label><input type="radio" name="mode2" value="none"> 原圖模式 (不處理)</label>
+        </div>
+
         <div class="btn-action">
             <button id="backBtn1" class="btn-secondary" style="flex: 1; padding: 12px 5px;">回上一步</button>
             <button id="rotateBtn2" class="btn-secondary" style="display:none; flex: 1.2; padding: 12px 5px;">↻ 旋轉 90°</button>
@@ -153,7 +168,7 @@
             </div>
         </div>
         <div style="font-size: 12px; color: #888; margin-top: 5px;">
-            (預覽圖已由系統自動強化為高對比影像以利 AI 辨識。<br>比對完成後，可點擊照片進行手動疊影覆核)
+            (預覽圖為套用濾鏡後之實際送出影像。比對完成後，可點擊照片進行疊影覆核)
         </div>
 
         <div style="display: flex; margin-top: 20px; gap: 10px;" id="action-buttons">
@@ -194,10 +209,10 @@
                 <li style="margin-bottom: 8px;"><b>不可對螢幕翻拍：</b>請直接拍攝「實體」或「原始拓印紙」。對螢幕翻拍會產生摩爾紋與嚴重失真，導致系統誤判！</li>
                 <li><b>嚴禁正面閃光燈：</b>正面強光會吃掉金屬凹槽陰影，讓鋼印瞬間隱形。</li>
             </ul>
-            <h4 style="color: #d35400; margin-bottom: 5px;">🔥 現場拍攝與自動強化</h4>
+            <h4 style="color: #d35400; margin-bottom: 5px;">🔥 現場拍攝與濾鏡選擇</h4>
             <ul style="color: #444; font-size: 14px; padding-left: 20px; margin-top: 0;">
                 <li style="margin-bottom: 8px;"><b>斜角打光法：</b>請用手電筒從側邊 30°~45° 打光，製造鋼印凹槽陰影。</li>
-                <li><b>系統全自動優化：</b>您只需拉好裁切範圍，系統會<b>自動</b>針對拓印進行反相去噪，針對實體進行除鏽加深對比，無須手動設定。</li>
+                <li><b>抗鏽蝕二值化：</b>若鋼印表面嚴重生鏽，請於步驟2選擇此模式，系統會自動消滅鐵鏽色，僅保留黑色凹槽陰影。</li>
             </ul>
         </div>
     </div>
@@ -225,7 +240,6 @@
         
         // =========================================================
         // ★★★ 請將您的 GAS Web App URL 貼在下方引號內 ★★★
-        // =========================================================
         const GAS_API_URL = "https://script.google.com/macros/s/AKfycbycbiOxbx9T4ynci32AWE46a-B42N_MaIQUBmwvsuzj3WiJ5_dHEL3Z_qw3cv8nkGZkAw/exec"; 
         // =========================================================
 
@@ -234,23 +248,14 @@
         let pdfDoc1 = null, pdfPage1 = 1, pdfDoc2 = null, pdfPage2 = 1;
         let canOpenCheck = false; 
 
-        const cropperOptions = {
-            viewMode: 1,
-            dragMode: 'move',
-            autoCropArea: 0.8,
-            responsive: true,
-            background: true,
-            guides: true,
-            center: true
-        };
+        const cropperOptions = { viewMode: 1, dragMode: 'move', autoCropArea: 0.8, responsive: true, background: true, guides: true, center: true };
 
-        // Modal 邏輯
+        // Modal & CheckModal 邏輯
         const infoModal = document.getElementById("infoModal");
         document.getElementById("infoFab").onclick = function() { infoModal.style.display = "block"; };
         document.getElementById("closeInfo").onclick = function() { infoModal.style.display = "none"; };
         window.onclick = function(event) { if (event.target == infoModal) { infoModal.style.display = "none"; } };
 
-        // CheckModal 邏輯
         const checkModal = document.getElementById('checkModal');
         const checkBaseImg = document.getElementById('checkBaseImg');
         const checkOverlayImg = document.getElementById('checkOverlayImg');
@@ -272,13 +277,11 @@
             if (e.touches.length === 1) { isDragging = true; startX = e.touches[0].clientX - xOffset; startY = e.touches[0].clientY - yOffset; } 
             else if (e.touches.length === 2) { isDragging = false; initialPinchDistance = getDistance(e.touches); initialPinchScale = currentScale; initialTouchAngle = getAngle(e.touches); initialElementRotation = currentRotation; }
         }, { passive: false });
-
         checkContainer.addEventListener("touchmove", function(e) {
             e.preventDefault(); 
             if (e.touches.length === 1 && isDragging) { currentX = e.touches[0].clientX - startX; currentY = e.touches[0].clientY - startY; xOffset = currentX; yOffset = currentY; updateOverlayTransform(); } 
             else if (e.touches.length === 2 && initialPinchDistance !== null) { currentScale = Math.min(Math.max(0.1, initialPinchScale * (getDistance(e.touches) / initialPinchDistance)), 5); currentRotation = initialElementRotation + radToDeg(getAngle(e.touches) - initialTouchAngle); updateOverlayTransform(); }
         }, { passive: false });
-
         checkContainer.addEventListener("touchend", function(e) { 
             if (e.touches.length < 2) { initialPinchDistance = null; initialTouchAngle = null; } 
             if (e.touches.length === 1) { isDragging = true; startX = e.touches[0].clientX - xOffset; startY = e.touches[0].clientY - yOffset; } 
@@ -292,42 +295,31 @@
             if (clickedImgId === 'preview1') { checkBaseImg.src = finalImg1Data; checkOverlayImg.src = finalImg2Data; } else { checkBaseImg.src = finalImg2Data; checkOverlayImg.src = finalImg1Data; }
             checkModal.style.display = 'block'; document.body.style.overflow = 'hidden'; history.pushState({ isModalOpen: true }, "", "");
         }
-
         function closeCheckModal(fromPopState = false) { 
             checkModal.style.display = 'none'; document.getElementById("infoFab").style.display = 'flex'; document.body.style.overflow = ''; 
             if (!fromPopState) { history.back(); } 
         }
-
         window.addEventListener("popstate", function() { if (checkModal.style.display === 'block') { closeCheckModal(true); } });
 
         document.getElementById('preview1').addEventListener('click', function() { openCheckModal('preview1'); });
         document.getElementById('preview2').addEventListener('click', function() { openCheckModal('preview2'); });
         document.getElementById('closeCheckBtn').addEventListener('click', function() { closeCheckModal(false); });
         document.getElementById('topCloseCheckBtn').addEventListener('click', function() { closeCheckModal(false); });
-        
         checkOpacitySlider.addEventListener('input', function() { checkOverlayImg.style.opacity = this.value; document.getElementById('checkOpacityVal').innerText = Math.round(this.value * 100) + '%'; });
 
         // 流程控制
-        function updateProgress(step) { 
-            document.querySelectorAll('.progressbar li').forEach(function(li, index) { 
-                li.className = ''; if (index + 1 < step) { li.classList.add('completed'); } else if (index + 1 === step) { li.classList.add('active'); }
-            }); 
-        }
-
-        function switchStep(fromStep, toStep) { 
-            document.getElementById(`step${fromStep}`).classList.remove('active-step'); document.getElementById(`step${toStep}`).classList.add('active-step'); updateProgress(toStep); 
-        }
+        function updateProgress(step) { document.querySelectorAll('.progressbar li').forEach(function(li, index) { li.className = ''; if (index + 1 < step) { li.classList.add('completed'); } else if (index + 1 === step) { li.classList.add('active'); } }); }
+        function switchStep(fromStep, toStep) { document.getElementById(`step${fromStep}`).classList.remove('active-step'); document.getElementById(`step${toStep}`).classList.add('active-step'); updateProgress(toStep); }
 
         function showButtons(stepNum) { 
             document.getElementById(`cropBtn${stepNum}`).style.display = 'inline-block'; 
             document.getElementById(`rotateBtn${stepNum}`).style.display = 'inline-block'; 
             document.getElementById(`hint${stepNum}`).style.display = 'block'; 
+            document.getElementById(`filterOpt${stepNum}`).style.display = 'block'; // 顯示濾鏡選單
         }
 
         async function renderPdfPage(pdfDoc, pageNum, imgElement, stepNum) { 
-            const page = await pdfDoc.getPage(pageNum); 
-            const viewport = page.getViewport({ scale: 2.0 }); 
-            const canvas = document.createElement('canvas'); const context = canvas.getContext('2d'); canvas.height = viewport.height; canvas.width = viewport.width; 
+            const page = await pdfDoc.getPage(pageNum); const viewport = page.getViewport({ scale: 2.0 }); const canvas = document.createElement('canvas'); const context = canvas.getContext('2d'); canvas.height = viewport.height; canvas.width = viewport.width; 
             await page.render({ canvasContext: context, viewport: viewport }).promise; 
             imgElement.onload = function() { 
                 if (stepNum === 1) { if (cropper1) cropper1.destroy(); cropper1 = new Cropper(imgElement, cropperOptions); } else { if (cropper2) cropper2.destroy(); cropper2 = new Cropper(imgElement, cropperOptions); } 
@@ -376,12 +368,13 @@
             targetCanvas.width = croppedCanvas.width; targetCanvas.height = croppedCanvas.height;
             let ctx = targetCanvas.getContext('2d');
             
-            // 鋪白底
             ctx.fillStyle = '#FFFFFF';
             ctx.fillRect(0, 0, targetCanvas.width, targetCanvas.height);
             
-            // ★ 強制自動套用拓印濾鏡 (反相+黑白+高對比)
-            ctx.filter = 'invert(100%) grayscale(100%) contrast(250%) brightness(120%) blur(0.5px)';
+            let mode = document.querySelector('input[name="mode1"]:checked').value;
+            if (mode === 'auto') {
+                ctx.filter = 'invert(100%) grayscale(100%) contrast(250%) brightness(120%) blur(0.5px)';
+            }
             
             ctx.drawImage(croppedCanvas, 0, 0);
             finalImg1Data = targetCanvas.toDataURL('image/jpeg', 0.9); 
@@ -403,14 +396,38 @@
             targetCanvas.width = croppedCanvas.width; targetCanvas.height = croppedCanvas.height;
             let ctx = targetCanvas.getContext('2d');
             
-            // 鋪白底
             ctx.fillStyle = '#FFFFFF';
             ctx.fillRect(0, 0, targetCanvas.width, targetCanvas.height);
             
-            // ★ 強制自動套用實體濾鏡 (黑白+高對比)
-            ctx.filter = 'grayscale(100%) contrast(180%) brightness(110%)';
+            let mode = document.querySelector('input[name="mode2"]:checked').value;
             
-            ctx.drawImage(croppedCanvas, 0, 0);
+            if (mode === 'auto') {
+                // 原本的 CSS 強化濾鏡
+                ctx.filter = 'grayscale(100%) contrast(180%) brightness(110%)';
+                ctx.drawImage(croppedCanvas, 0, 0);
+            } else if (mode === 'pixel') {
+                // ★ 實驗性：抗鏽蝕像素二值化處理
+                ctx.drawImage(croppedCanvas, 0, 0); 
+                let imgData = ctx.getImageData(0, 0, targetCanvas.width, targetCanvas.height);
+                let data = imgData.data;
+                for (let i = 0; i < data.length; i += 4) {
+                    let r = data[i], g = data[i+1], b = data[i+2];
+                    
+                    // 抑制紅色，以綠藍色計算亮度
+                    let customGray = (g * 0.7) + (b * 0.3); 
+                    
+                    // 閾值 100：小於100變純黑(凹槽)，大於100變純白(生鏽表面)
+                    let threshold = 100; 
+                    let finalColor = customGray < threshold ? 0 : 255;
+                    
+                    data[i] = finalColor; data[i+1] = finalColor; data[i+2] = finalColor;
+                }
+                ctx.putImageData(imgData, 0, 0);
+            } else {
+                // 原圖直出
+                ctx.drawImage(croppedCanvas, 0, 0);
+            }
+            
             finalImg2Data = targetCanvas.toDataURL('image/jpeg', 0.9); 
             document.getElementById('preview2').src = finalImg2Data; 
             switchStep(2, 3); 
