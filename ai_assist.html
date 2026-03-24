@@ -114,8 +114,8 @@
         
         <div id="filterOpt1" class="filter-group">
             <p>🪄 拓印處理模式：</p>
-            <label><input type="radio" name="mode1" value="auto" checked> 預設強化 (反相去噪)</label>
-            <label><input type="radio" name="mode1" value="none"> 原圖模式 (不處理)</label>
+            <label><input type="radio" name="mode1" value="none" checked> 原圖模式 (不處理)</label>
+            <label><input type="radio" name="mode1" value="auto"> 預設強化 (反相去噪)</label>
         </div>
         
         <div class="btn-action">
@@ -141,9 +141,9 @@
         
         <div id="filterOpt2" class="filter-group">
             <p>✨ 實體照片處理模式：</p>
-            <label><input type="radio" name="mode2" value="auto" checked> 預設強化 (去色高對比)</label>
+            <label><input type="radio" name="mode2" value="none" checked> 原圖模式 (不處理)</label>
+            <label><input type="radio" name="mode2" value="auto"> 預設強化 (去色高對比)</label>
             <label style="color: #d35400;"><input type="radio" name="mode2" value="pixel"> 實驗：抗鏽蝕二值化 (消滅鐵鏽)</label>
-            <label><input type="radio" name="mode2" value="none"> 原圖模式 (不處理)</label>
         </div>
 
         <div class="btn-action">
@@ -168,7 +168,7 @@
             </div>
         </div>
         <div style="font-size: 12px; color: #888; margin-top: 5px;">
-            (預覽圖為套用濾鏡後之實際送出影像。比對完成後，可點擊照片進行疊影覆核)
+            (預覽圖為套用處理後之實際送出影像。比對完成後，可點擊照片進行疊影覆核)
         </div>
 
         <div style="display: flex; margin-top: 20px; gap: 10px;" id="action-buttons">
@@ -402,29 +402,21 @@
             let mode = document.querySelector('input[name="mode2"]:checked').value;
             
             if (mode === 'auto') {
-                // 原本的 CSS 強化濾鏡
                 ctx.filter = 'grayscale(100%) contrast(180%) brightness(110%)';
                 ctx.drawImage(croppedCanvas, 0, 0);
             } else if (mode === 'pixel') {
-                // ★ 實驗性：抗鏽蝕像素二值化處理
                 ctx.drawImage(croppedCanvas, 0, 0); 
                 let imgData = ctx.getImageData(0, 0, targetCanvas.width, targetCanvas.height);
                 let data = imgData.data;
                 for (let i = 0; i < data.length; i += 4) {
                     let r = data[i], g = data[i+1], b = data[i+2];
-                    
-                    // 抑制紅色，以綠藍色計算亮度
                     let customGray = (g * 0.7) + (b * 0.3); 
-                    
-                    // 閾值 100：小於100變純黑(凹槽)，大於100變純白(生鏽表面)
                     let threshold = 100; 
                     let finalColor = customGray < threshold ? 0 : 255;
-                    
                     data[i] = finalColor; data[i+1] = finalColor; data[i+2] = finalColor;
                 }
                 ctx.putImageData(imgData, 0, 0);
             } else {
-                // 原圖直出
                 ctx.drawImage(croppedCanvas, 0, 0);
             }
             
